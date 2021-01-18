@@ -3,9 +3,10 @@ import processing.core.*;
 public class Checkbox
 {
 	// colors
-	public static int BACKGROUND_OFF = 0xFF993333;
+	public static int BACKGROUND_OFF = 0xFF660000;
 	public static int BACKGROUND_ON  = 0xFFFF3333;
-	public static int TEXT           = 0xFF000000;
+	public static int TEXT_OFF       = 0xFFFFFFFF;
+  public static int TEXT_ON        = 0xFF000000;
 	public static int STROKE_NORMAL  = 0xFF000000;
 	public static int STROKE_HOVER   = 0xFFFFFFFF;
 
@@ -87,7 +88,7 @@ public class Checkbox
 		g.stroke(isOver(mouseX, mouseY) ? STROKE_HOVER : STROKE_NORMAL);
 		g.ellipse(posX, posY, size, size);
 
-		g.fill(TEXT);
+		g.fill(state ? TEXT_ON : TEXT_OFF);
 		g.text(label, posX, posY);
 	}
 }

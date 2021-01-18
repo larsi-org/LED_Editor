@@ -1,6 +1,16 @@
+import java.util.Vector;
+
+//static String DIRECTORY = "cube3";
+static String DIRECTORY = "hex10";
+//static String DIRECTORY = "circle10";
+
 // colors
 static int FILL_BACKGROUND = 0xFF333333;
 static int STROKE_WIRE     = 0xFFFFFFFF;
+
+static int MENU_OFFSET     = 800;
+static int XDIM2           = MENU_OFFSET / 2;
+static int FACTOR          = int(0.9 * XDIM2);
 
 // LEDs
 Checkbox[] leds;
@@ -8,29 +18,32 @@ Checkbox[] leds;
 // Lines
 int[][] lines;
 
+// Lines
+int[] symmetry;
+
 // Animation States
-ArrayList states = new ArrayList();
+Vector states = new Vector();
 
 // current index
 int   current      = 0;
-Label currentLabel = new Label("", 500, 40, 80, 24);
+Label currentLabel = new Label("", MENU_OFFSET + 100, 40, 80, 24);
 
 // clipboard
 boolean [] clipboard;
 
 // Buttons
 Button[] buttons = {
-		new Button("<<",        430,  40, 40, 24, ','),
-		new Button(">>",        570,  40, 40, 24, '.'),
-		new Button("Copy",      450,  80, 80, 24, 'c'),
-		new Button("Paste",     550,  80, 80, 24, 'v'),
-		new Button("Clear",     450, 120, 80, 24, ' '),
-		new Button("Invert",    550, 120, 80, 24, 'i'),
-		new Button("<< Ins",    440, 330, 60, 24, '['),
-		new Button("Ins >>",    560, 330, 60, 24, ']'),
-		new Button("Del",       500, 330, 40, 24, DELETE),
-		new Button("Generate",  450, 370, 80, 24, 'g'),
-		new Button("Quit",      550, 370, 80, 24, 'q')
+	new Button("<<",        MENU_OFFSET +  30,  40, 40, 24, ','),
+	new Button(">>",        MENU_OFFSET + 170,  40, 40, 24, '.'),
+	new Button("Copy",      MENU_OFFSET +  50,  80, 80, 24, 'c'),
+	new Button("Paste",     MENU_OFFSET + 150,  80, 80, 24, 'v'),
+	new Button("Clear",     MENU_OFFSET +  50, 120, 80, 24, ' '),
+	new Button("Invert",    MENU_OFFSET + 150, 120, 80, 24, 'i'),
+	new Button("<< Ins",    MENU_OFFSET +  40, 330, 60, 24, '['),
+	new Button("Ins >>",    MENU_OFFSET + 160, 330, 60, 24, ']'),
+	new Button("Del",       MENU_OFFSET + 100, 330, 40, 24, DELETE),
+	new Button("Generate",  MENU_OFFSET +  50, 370, 80, 24, 'g'),
+	new Button("Quit",      MENU_OFFSET + 150, 370, 80, 24, 'q')
 };
 
 int duration = 50;
@@ -38,7 +51,7 @@ int duration = 50;
 /** Processing: setup() */
 void setup()
 {
-	size(600, 400);
+	size(1000, 800);
 	textFont(loadFont("Univers45.vlw"), 16);
 	textAlign(CENTER, CENTER);
 	smooth();
@@ -46,20 +59,34 @@ void setup()
 	String[] text;
 
 	// LEDs
-	text = loadStrings("cube3_leds.txt");
+	text = loadStrings(DIRECTORY + "/coords.txt");
 	leds = new Checkbox[text.length];
-	for(int i = 0; i < leds.length; i++) {
+	symmetry = new int[text.length];
+	for(int i = 0; i < text.length; i++) {
 		String[] pieces = split(text[i], '\t');
-		leds[i] = new Checkbox(pieces[0], PApplet.parseInt(pieces[1]), PApplet.parseInt(pieces[2]), PApplet.parseInt(pieces[3]), false);
+		leds[i] = new Checkbox(pieces[0], round(XDIM2 + FACTOR * PApplet.parseFloat(pieces[1])), round(XDIM2 + FACTOR * PApplet.parseFloat(pieces[2])), round(FACTOR * PApplet.parseFloat(pieces[3])), false);
+		symmetry[i] = i;
 	}
 
 	// Lines
-	text = loadStrings("cube3_lines.txt");
-	lines = new int[text.length][2];
-	for(int i = 0; i < lines.length; i++) {
-		String[] pieces = split(text[i], '\t');
-		lines[i][0] = PApplet.parseInt(pieces[0]);
-		lines[i][1] = PApplet.parseInt(pieces[1]);
+	text = loadStrings(DIRECTORY + "/lines.txt");
+	if (text == null) {
+		lines = new int[0][2];
+	} else {
+		lines = new int[text.length][2];
+		for(int i = 0; i < lines.length; i++) {
+			String[] pieces = split(text[i], '\t');
+			lines[i][0] = PApplet.parseInt(pieces[0]);
+			lines[i][1] = PApplet.parseInt(pieces[1]);
+		}
+	}
+
+	// Symmetry
+	text = loadStrings(DIRECTORY + "/symmetry.txt");
+	if (text != null) {
+		for(int i = 0; i < text.length; i++) {
+			symmetry[i] = PApplet.parseInt(text[i]);
+		}
 	}
 
 	// create clipboard
@@ -93,7 +120,7 @@ void draw()
 	currentLabel.draw(g);
 
 	// draw buttons
-	for (int i = 0; i < buttons.length; i++) 
+	for (int i = 0; i < buttons.length; i++)
 		buttons[i].draw(g, mouseX, mouseY);
 }
 
@@ -141,10 +168,10 @@ void executeKey(char key)
 		for (int j = 0; j < states.size(); j++) {
 			print("\t{ ");
 			for (int i = 0; i < leds.length; i += 3)
-				print("B" + 
-						(((boolean[])states.get(j))[i    ] ? "1" : 0) + 
-						(((boolean[])states.get(j))[i + 1] ? "1" : 0) + 
-						(((boolean[])states.get(j))[i + 2] ? "1" : 0) + 
+				print("B" +
+						(((boolean[])states.get(j))[i    ] ? "1" : "0") +
+						(((boolean[])states.get(j))[i + 1] ? "1" : "0") +
+						(((boolean[])states.get(j))[i + 2] ? "1" : "0") +
 				", ");
 			println(duration + " },");
 		}
@@ -167,7 +194,13 @@ void mouseReleased()
 	switch (mouseButton) {
 	case LEFT:
 		for (int i = 0; i < leds.length; i++)
-			if (leds[i].isOver(mouseX, mouseY)) ((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
+			if (leds[i].isOver(mouseX, mouseY)) {
+				((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
+
+				int j = i;
+				while ((j = symmetry[j]) != i)
+					((boolean[])states.get(current))[j] = !((boolean[])states.get(current))[j];
+			}
 
 		for (int i = 0; i < buttons.length; i++)
 			if (buttons[i].isOver(mouseX, mouseY)) executeKey(buttons[i].getHotkey());
