@@ -64,7 +64,7 @@ def create_matrix(dim_x, dim_y):
 	n = 0
 	direction = 1
 	for j in range(dim_y):
-		y = 0 if dim_y == 1 else 1 - 2 * j / (dim_y - 1)
+		y = 0 if dim_y == 1 else 2 * j / (dim_y - 1) - 1
 		for i in range(dim_x):
 			x = direction * (2 * i / (dim_x - 1) - 1)
 			p = {
