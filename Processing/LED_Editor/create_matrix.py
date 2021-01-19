@@ -2,7 +2,7 @@
 
 import math
 
-zigzag = True
+zigzag = False
 
 
 def pretty(f):
@@ -68,7 +68,7 @@ def create_matrix(dim_x, dim_y):
 		for i in range(dim_x):
 			x = direction * (2 * i / (dim_x - 1) - 1)
 			p = {
-				'name': n,
+				'name': n + 1,
 				'next': n,
 				'x': x,
 				'y': y,
