@@ -102,3 +102,5 @@ create_matrix( 4,  4)
 create_matrix( 5,  5)
 create_matrix( 8,  8)
 create_matrix(16, 16)
+
+create_matrix( 6,  5)
