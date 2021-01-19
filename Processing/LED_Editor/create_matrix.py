@@ -52,18 +52,24 @@ def find_symmetry(a):
 				a[i7]['next'] = i0
 
 
-def create_matrix(x, y):
-	coords = open('data/hex{}/coords.txt'.format(n), 'w')
-	lines = open('data/hex{}/lines.txt'.format(n), 'w')
-	symmetry = open('data/hex{}/symmetry.txt'.format(n), 'w')
+def create_matrix(dim_x, dim_y):
+	directory = "led_{}".format(dim_x) if dim_y == 1 else "led_{}x{}".format(dim_x, dim_y)
+	coords = open('data/{}/coords.txt'.format(directory), 'w')
+	#lines = open('data/{}/lines.txt'.format(directory), 'w')
+	symmetry = open('data/{}/symmetry.txt'.format(directory), 'w')
 
 
-	def create_a_row(i_start, i_cnt, direction, y):
-		for i in range(i_cnt):
-			x = direction * dx * (i - (i_cnt - 1) / 2.0)
+	all_coords = []
+
+	n = 0
+	direction = 1
+	for j in range(dim_y):
+		y = 0 if dim_y == 1 else 1 - 2 * j / (dim_y - 1)
+		for i in range(dim_x):
+			x = direction * (2 * i / (dim_x - 1) - 1)
 			p = {
-				'name': i_start + i,
-				'next': i_start + i,
+				'name': n,
+				'next': n,
 				'x': x,
 				'y': y,
 				'r': (x ** 2 + y ** 2) ** .5,
@@ -71,97 +77,28 @@ def create_matrix(x, y):
 			}
 			all_coords.append(p)
 			print("{}\t{}\t{}\t{}".format(p['name'], pretty(p['x']), pretty(p['y']), 0.1), file = coords)
-		print("{}\t{}".format(i_start, i_start + i_cnt - 1), file = lines)
-
-
-	all_coords = []
-
-	dx = 1.0 / (n - 1)
-	dy = math.sqrt(0.75) * dx
-
-	direction = 1
-	i = 0
-	i_cnt = n
-
-	for y in range(1, n):
-		create_a_row(i, i_cnt, direction, dy * (y - n))
-		i += i_cnt
-		i_cnt += 1
-		if zigzag: direction *= -1
-
-	i_cnt = 2 * n - 1
-	create_a_row(i, i_cnt, direction, 0.0)
-	i += i_cnt
-	i_cnt -= 1
-	if zigzag: direction *= -1
-
-	for y in range(1, n):
-		create_a_row(i, i_cnt, direction, dy * y)
-		i += i_cnt
-		i_cnt -= 1
+			n += 1
 		if zigzag: direction *= -1
 
 
-	find_symmetry(all_coords)
+	#find_symmetry(all_coords)
 	for p in all_coords:
 		print(p['next'], file = symmetry)
 
 
 	coords.close()
-	lines.close()
+	#lines.close()
 	symmetry.close()
 
 
-def create_circle(n):
-	all_coords = []
+# main
+create_matrix( 5,  1)
+create_matrix( 8,  1)
+create_matrix(16,  1)
+create_matrix(20,  1)
 
-	coords = open('data/circle{}/coords.txt'.format(n), 'w')
-	lines = open('data/circle{}/lines.txt'.format(n), 'w')
-	symmetry = open('data/circle{}/symmetry.txt'.format(n), 'w')
-
-	i = 0
-	p = {
-		'name': i,
-		'next': i,
-		'x': 0,
-		'y': 0,
-		'r': 0,
-		't': 0
-	}
-	all_coords.append(p)
-	print("{}\t{}\t{}\t{}".format(p['name'], pretty(p['x']), pretty(p['y']), 0.1), file = coords)
-	i += 1
-
-	for c in range(1, n):
-		r = c / (n - 1)
-		f_a = 60.0 / c
-		for a in range(6 * c):
-			angle = f_a * a
-			p = {
-				'name': i,
-				'next': i,
-				'x': r * math.cos(math.radians(angle)),
-				'y': -r * math.sin(math.radians(angle)),
-				'r': r,
-				't': angle
-			}
-			all_coords.append(p)
-			print("{}\t{}\t{}\t{}".format(p['name'], pretty(p['x']), pretty(p['y']), 0.1), file = coords)
-			i += 1
-		# print("{}\t{}".format(i_start, i_start + i_cnt - 1), file = lines)
-
-
-	find_symmetry(all_coords)
-	for p in all_coords:
-		print(p['next'], file = symmetry)
-
-
-	coords.close()
-	lines.close()
-	symmetry.close()
-
-
-# main loop
-for n in range(3, 14):
-	create_hex(n)
-	create_circle(n)
+create_matrix( 3,  3)
+create_matrix( 4,  4)
+create_matrix( 5,  5)
+create_matrix( 8,  8)
+create_matrix(16, 16)
