@@ -172,20 +172,21 @@ void executeKey(char key)
 		for (int i = 0; i < leds.length; i++) ((boolean[])states.get(current))[i] = clipboard[i];
 		break;
 	case 'g': // generate source code of animation
-		for (int j = 0; j < states.size(); j++) {
-			print("\t{ ");
-			for (int i = 0; i < leds.length; i += 3)
-				print("B" +
-						(((boolean[])states.get(j))[i    ] ? "1" : "0") +
-						(((boolean[])states.get(j))[i + 1] ? "1" : "0") +
-						(((boolean[])states.get(j))[i + 2] ? "1" : "0") +
-				", ");
-			println(duration + " },");
-		}
+		generate();
 		break;
 	case 'q': // quit applet
 		exit();
 		break;
+	}
+}
+
+void generate()
+{
+	for (int j = 0; j < states.size(); j++) {
+		for (int i = 0; i < leds.length; i++) {
+			print(((boolean[])states.get(j))[i] ? "1" : "0" );
+		}
+		println();
 	}
 }
 
