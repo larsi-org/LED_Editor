@@ -8,9 +8,16 @@ static String DIRECTORY = "hex10";
 static int FILL_BACKGROUND = 0xFF333333;
 static int STROKE_WIRE     = 0xFFFFFFFF;
 
-static int MENU_OFFSET     = 800;
-static int XDIM2           = MENU_OFFSET / 2;
-static int FACTOR          = int(0.9 * XDIM2);
+static int DIM             = 800;
+static int DIM2            = DIM / 2;
+static int FACTOR          = int(0.95 * DIM2);
+
+static int MENU_DX         = 0;
+static int MENU_DY         = 0;
+
+static int LEDS_DX         =  0;
+static int LEDS_DY         = 50;
+
 
 // LEDs
 Checkbox[] leds;
@@ -26,24 +33,24 @@ Vector states = new Vector();
 
 // current index
 int   current      = 0;
-Label currentLabel = new Label("", MENU_OFFSET + 100, 40, 80, 24);
+Label currentLabel = new Label("", MENU_DX + 100, MENU_DY + 25, 80, 24);
 
 // clipboard
 boolean [] clipboard;
 
 // Buttons
 Button[] buttons = {
-	new Button("<<",        MENU_OFFSET +  30,  40, 40, 24, ','),
-	new Button(">>",        MENU_OFFSET + 170,  40, 40, 24, '.'),
-	new Button("Copy",      MENU_OFFSET +  50,  80, 80, 24, 'c'),
-	new Button("Paste",     MENU_OFFSET + 150,  80, 80, 24, 'v'),
-	new Button("Clear",     MENU_OFFSET +  50, 120, 80, 24, ' '),
-	new Button("Invert",    MENU_OFFSET + 150, 120, 80, 24, 'i'),
-	new Button("<< Ins",    MENU_OFFSET +  40, 330, 60, 24, '['),
-	new Button("Ins >>",    MENU_OFFSET + 160, 330, 60, 24, ']'),
-	new Button("Del",       MENU_OFFSET + 100, 330, 40, 24, DELETE),
-	new Button("Generate",  MENU_OFFSET +  50, 370, 80, 24, 'g'),
-	new Button("Quit",      MENU_OFFSET + 150, 370, 80, 24, 'q')
+	new Button("<<",        MENU_DX +  30, MENU_DY + 25, 40, 24, ','),
+	new Button(">>",        MENU_DX + 170, MENU_DY + 25, 40, 24, '.'),
+	new Button("Copy",      MENU_DX + 255, MENU_DY + 25, 80, 24, 'c'),
+	new Button("Paste",     MENU_DX + 345, MENU_DY + 25, 80, 24, 'v'),
+	new Button("Clear",     MENU_DX + 455, MENU_DY + 25, 80, 24, ' '),
+	new Button("Invert",    MENU_DX + 545, MENU_DY + 25, 80, 24, 'i'),
+	new Button("<< Ins",    MENU_DX + 645, MENU_DY + 25, 60, 24, '['),
+	new Button("Del",       MENU_DX + 705, MENU_DY + 25, 40, 24, DELETE),
+	new Button("Ins >>",    MENU_DX + 765, MENU_DY + 25, 60, 24, ']'),
+	new Button("Generate",  MENU_DX + 855, MENU_DY + 25, 80, 24, 'g'),
+	new Button("Quit",      MENU_DX + 945, MENU_DY + 25, 80, 24, 'q')
 };
 
 int duration = 50;
@@ -51,7 +58,7 @@ int duration = 50;
 /** Processing: setup() */
 void setup()
 {
-	size(1000, 800);
+	size(1000, 850);
 	textFont(loadFont("Univers45.vlw"), 16);
 	textAlign(CENTER, CENTER);
 	smooth();
@@ -64,7 +71,7 @@ void setup()
 	symmetry = new int[text.length];
 	for(int i = 0; i < text.length; i++) {
 		String[] pieces = split(text[i], '\t');
-		leds[i] = new Checkbox(pieces[0], round(XDIM2 + FACTOR * PApplet.parseFloat(pieces[1])), round(XDIM2 + FACTOR * PApplet.parseFloat(pieces[2])), round(FACTOR * PApplet.parseFloat(pieces[3])), false);
+		leds[i] = new Checkbox(pieces[0], round(LEDS_DX + DIM2 + FACTOR * PApplet.parseFloat(pieces[1])), round(LEDS_DY + DIM2 + FACTOR * PApplet.parseFloat(pieces[2])), round(FACTOR * PApplet.parseFloat(pieces[3])), false);
 		symmetry[i] = i;
 	}
 
