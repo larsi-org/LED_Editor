@@ -206,5 +206,15 @@ void mouseReleased()
 			if (buttons[i].isOver(mouseX, mouseY)) executeKey(buttons[i].getHotkey());
 
 		break;
+	case RIGHT:
+		for (int i = 0; i < leds.length; i++)
+			if (leds[i].isOver(mouseX, mouseY)) {
+				((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
+			}
+
+		for (int i = 0; i < buttons.length; i++)
+			if (buttons[i].isOver(mouseX, mouseY)) executeKey(buttons[i].getHotkey());
+
+		break;
 	}
 }
