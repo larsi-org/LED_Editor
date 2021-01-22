@@ -8,15 +8,15 @@ static String DIRECTORY = "hex10";
 static int FILL_BACKGROUND = 0xFF333333;
 static int STROKE_WIRE     = 0xFFFFFFFF;
 
-static int DIM             = 800;
-static int DIM2            = DIM / 2;
-static int FACTOR          = int(0.95 * DIM2);
-
 static int MENU_DX         = 0;
 static int MENU_DY         = 0;
 
-static int LEDS_DX         =  0;
-static int LEDS_DY         = 50;
+static int DIM             = 800;
+static int DIM2            = DIM / 2;
+
+static int LEDS_DX         =      DIM2;
+static int LEDS_DY         = 50 + DIM2;
+static int LEDS_F          = int(0.95 * DIM2);
 
 
 // LEDs
@@ -71,7 +71,7 @@ void setup()
 	symmetry = new int[text.length];
 	for(int i = 0; i < text.length; i++) {
 		String[] pieces = split(text[i], '\t');
-		leds[i] = new Checkbox(pieces[0], round(LEDS_DX + DIM2 + FACTOR * PApplet.parseFloat(pieces[1])), round(LEDS_DY + DIM2 + FACTOR * PApplet.parseFloat(pieces[2])), round(FACTOR * PApplet.parseFloat(pieces[3])), false);
+		leds[i] = new Checkbox(pieces[0], PApplet.parseFloat(pieces[1]), PApplet.parseFloat(pieces[2]), PApplet.parseFloat(pieces[3]), false);
 		symmetry[i] = i;
 	}
 
@@ -114,12 +114,12 @@ void draw()
 	// draw wires
 	stroke(STROKE_WIRE);
 	for (int i = 0; i < lines.length; i++)
-		line(leds[lines[i][0]].getPosX(), leds[lines[i][0]].getPosY(), leds[lines[i][1]].getPosX(), leds[lines[i][1]].getPosY());
+		line(leds[lines[i][0]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][0]].getPosY(LEDS_DY, LEDS_F), leds[lines[i][1]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][1]].getPosY(LEDS_DY, LEDS_F));
 
 	// draw LEDs
 	for (int i = 0; i < leds.length; i++) {
 		leds[i].setState(((boolean[])states.get(current))[i]); // copy current frame to LEDs
-		leds[i].draw(g, mouseX, mouseY, false);
+		leds[i].draw(g, LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY, false);
 	}
 
 	// draw current frame number
@@ -202,7 +202,7 @@ void mouseReleased()
 	switch (mouseButton) {
 	case LEFT:
 		for (int i = 0; i < leds.length; i++)
-			if (leds[i].isOver(mouseX, mouseY)) {
+			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) {
 				((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
 
 				int j = i;
@@ -216,7 +216,7 @@ void mouseReleased()
 		break;
 	case RIGHT:
 		for (int i = 0; i < leds.length; i++)
-			if (leds[i].isOver(mouseX, mouseY)) {
+			if (leds[i].isOver( LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) {
 				((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
 			}
 
