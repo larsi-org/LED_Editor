@@ -1,12 +1,14 @@
 import java.util.Vector;
 
+static String DIRECTORY = "led_16x16";
 //static String DIRECTORY = "cube3";
-static String DIRECTORY = "hex10";
+//static String DIRECTORY = "hex10";
 //static String DIRECTORY = "circle10";
 
 // colors
-static int FILL_BACKGROUND = 0xFF333333;
-static int STROKE_WIRE     = 0xFFFFFFFF;
+static int FILL_BACKGROUND = 0xFF222222;
+static int STROKE_DIV      = 0xFF336699;
+static int STROKE_WIRE     = 0xFF666666;
 
 static int MENU_DX         = 0;
 static int MENU_DY         = 0;
@@ -16,7 +18,7 @@ static int DIM2            = DIM / 2;
 
 static int LEDS_DX         =      DIM2;
 static int LEDS_DY         = 50 + DIM2;
-static int LEDS_F          = int(0.95 * DIM2);
+static int LEDS_F          = int(0.9 * DIM2);
 
 
 // LEDs
@@ -114,6 +116,18 @@ void draw()
 	// draw current frame number
 	currentLabel.setLabel("" + (1 + current) + " / " + states.size());
 	currentLabel.draw(g);
+
+	// divider lines
+	stroke(STROKE_DIV);
+	line(   0,  49, 1199,  49);
+	line(   0, 849, 1199, 849);
+	line(   0,  49,    0, 849);
+	line(1199,  49, 1199, 849);
+
+	for (int i = 0; i < 4; i++)
+		line(799 + 100 * i, 50, 799 + 100 * i, 849);
+	for (int i = 0; i < 7; i++)
+		line(799, 149 + 100 * i, 1199, 149 + 100 * i);
 
 	// draw buttons
 	for (int i = 0; i < buttons.length; i++)
