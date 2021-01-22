@@ -58,6 +58,11 @@ public class Checkbox
 		return (PApplet.sq(x_) + PApplet.sq(y_) <= PApplet.sq(getSize(f) / 2));
 	}
 
+	public void draw(PGraphics g, int dx, int dy, int f)
+	{
+		draw(g, dx, dy, f, 0, 0, true);
+	}
+
 	public void draw(PGraphics g, int dx, int dy, int f, int mouseX, int mouseY)
 	{
 		draw(g, dx, dy, f, mouseX, mouseY, false);

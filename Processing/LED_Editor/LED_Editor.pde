@@ -111,17 +111,6 @@ void draw()
 {
 	background(FILL_BACKGROUND);
 
-	// draw wires
-	stroke(STROKE_WIRE);
-	for (int i = 0; i < lines.length; i++)
-		line(leds[lines[i][0]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][0]].getPosY(LEDS_DY, LEDS_F), leds[lines[i][1]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][1]].getPosY(LEDS_DY, LEDS_F));
-
-	// draw LEDs
-	for (int i = 0; i < leds.length; i++) {
-		leds[i].setState(((boolean[])states.get(current))[i]); // copy current frame to LEDs
-		leds[i].draw(g, LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY, false);
-	}
-
 	// draw current frame number
 	currentLabel.setLabel("" + (1 + current) + " / " + states.size());
 	currentLabel.draw(g);
@@ -129,6 +118,30 @@ void draw()
 	// draw buttons
 	for (int i = 0; i < buttons.length; i++)
 		buttons[i].draw(g, mouseX, mouseY);
+
+	// draw thumb LEDs
+	for (int ty = 0; ty < 8; ty++) {
+		for (int tx = 0; tx < 4; tx++) {
+			int ti = tx + 4 * ty;
+			if (ti < states.size()) {
+				for (int i = 0; i < leds.length; i++) {
+					leds[i].setState(((boolean[])states.get(ti))[i]); // copy current frame to LEDs
+					leds[i].draw(g, 850 + tx * 100, 100 + ty * 100, 45);
+				}
+			}
+		}
+	}
+
+	// draw main wires
+	stroke(STROKE_WIRE);
+	for (int i = 0; i < lines.length; i++)
+		line(leds[lines[i][0]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][0]].getPosY(LEDS_DY, LEDS_F), leds[lines[i][1]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][1]].getPosY(LEDS_DY, LEDS_F));
+
+	// draw main LEDs
+	for (int i = 0; i < leds.length; i++) {
+		leds[i].setState(((boolean[])states.get(current))[i]); // copy current frame to LEDs
+		leds[i].draw(g, LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY);
+	}
 }
 
 void executeKey(char key)
