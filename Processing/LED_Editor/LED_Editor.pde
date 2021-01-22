@@ -58,7 +58,7 @@ int duration = 50;
 /** Processing: setup() */
 void setup()
 {
-	size(1000, 850);
+	size(1200, 850);
 	textFont(loadFont("Univers45.vlw"), 16);
 	textAlign(CENTER, CENTER);
 	smooth();
@@ -119,10 +119,10 @@ void draw()
 	// draw LEDs
 	for (int i = 0; i < leds.length; i++) {
 		leds[i].setState(((boolean[])states.get(current))[i]); // copy current frame to LEDs
-		leds[i].draw(g, mouseX, mouseY);
+		leds[i].draw(g, mouseX, mouseY, false);
 	}
 
-	// draw current frame
+	// draw current frame number
 	currentLabel.setLabel("" + (1 + current) + " / " + states.size());
 	currentLabel.draw(g);
 

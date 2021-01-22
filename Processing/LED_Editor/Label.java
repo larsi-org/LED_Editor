@@ -1,4 +1,5 @@
 import processing.core.*;
+import java.lang.Math;
 
 public class Label
 {
@@ -8,12 +9,12 @@ public class Label
 	public static int STROKE_NORMAL = 0xFF000000;
 
 	private String label;
-	private int    posX;
-	private int    posY;
-	private int    sizeX;
-	private int    sizeY;
+	private float  posX;
+	private float  posY;
+	private float  sizeX;
+	private float  sizeY;
 
-	public Label(String label, int posX, int posY, int sizeX, int sizeY)
+	public Label(String label, float posX, float posY, float sizeX, float sizeY)
 	{
 		this.label  = label;
 		this.posX   = posX;
@@ -32,53 +33,33 @@ public class Label
 		return label;
 	}
 
-	public void setPosX(int posX)
-	{
-		this.posX = posX;
-	}
-
 	public int getPosX()
 	{
-		return posX;
-	}
-
-	public void setPosY(int posY)
-	{
-		this.posY = posY;
+		return Math.round(posX);
 	}
 
 	public int getPosY()
 	{
-		return posY;
-	}
-
-	public void setSizeX(int sizeX)
-	{
-		this.sizeX = sizeX;
+		return Math.round(posY);
 	}
 
 	public int getSizeX()
 	{
-		return sizeX;
-	}
-
-	public void setSizeY(int sizeY)
-	{
-		this.sizeY = sizeY;
+		return Math.round(sizeX);
 	}
 
 	public int getSizeY()
 	{
-		return sizeY;
+		return Math.round(sizeY);
 	}
 
 	public void draw(PGraphics g)
 	{
 		g.fill(BACKGROUND);
 		g.stroke(STROKE_NORMAL);
-		g.rect(posX - sizeX / 2, posY - sizeY / 2, sizeX, sizeY);
+		g.rect(getPosX() - getSizeX() / 2, getPosY() - getSizeY() / 2, getSizeX(), getSizeY());
 
 		g.fill(TEXT);
-		g.text(label, posX, posY);
+		g.text(label, getSizeX(), getSizeY());
 	}
 }

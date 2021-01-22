@@ -1,4 +1,5 @@
 import processing.core.*;
+import java.lang.Math;
 
 public class Checkbox
 {
@@ -11,12 +12,12 @@ public class Checkbox
 	public static int STROKE_HOVER   = 0xFFFFFFFF;
 
 	private String  label = "";
-	private int     posX  = 0;
-	private int     posY  = 0;
-	private int     size  = 1;
+	private float   posX  = 0;
+	private float   posY  = 0;
+	private float   size  = 1;
 	private boolean state = false;
 
-	public Checkbox(String label, int posX, int posY, int size, boolean state)
+	public Checkbox(String label, float posX, float posY, float size, boolean state)
 	{
 		this.label = label;
 		this.posX  = posX;
@@ -25,44 +26,19 @@ public class Checkbox
 		this.state = state;
 	}
 
-	public void setLabel(String label)
-	{
-		this.label =  label;
-	}
-
-	public String getLabel()
-	{
-		return label;
-	}
-
-	public void setPosX(int posX)
-	{
-		this.posX = posX;
-	}
-
 	public int getPosX()
 	{
-		return posX;
-	}
-
-	public void setPosY(int posY)
-	{
-		this.posY = posY;
+		return Math.round(posX);
 	}
 
 	public int getPosY()
 	{
-		return posY;
-	}
-
-	public void setSize(int size)
-	{
-		this.size = size;
+		return Math.round(posY);
 	}
 
 	public int getSize()
 	{
-		return size;
+		return Math.round(size);
 	}
 
 	public void setState(boolean state)
@@ -75,20 +51,28 @@ public class Checkbox
 		return state;
 	}
 
-	public boolean isOver(int x, int y)
+	public boolean isOver(int mouseX, int mouseY)
 	{
-		int dx = x - posX;
-		int dy = y - posY;
-		return (PApplet.sq(dx) + PApplet.sq(dy) <= PApplet.sq(size / 2));
+		int dx = mouseX - getPosX();
+		int dy = mouseY - getPosY();
+		return (PApplet.sq(dx) + PApplet.sq(dy) <= PApplet.sq(getSize() / 2));
 	}
 
 	public void draw(PGraphics g, int mouseX, int mouseY)
 	{
-		g.fill(state ? BACKGROUND_ON : BACKGROUND_OFF);
-		g.stroke(isOver(mouseX, mouseY) ? STROKE_HOVER : STROKE_NORMAL);
-		g.ellipse(posX, posY, size, size);
+		draw(g, mouseX, mouseY, false);
+	}
 
-		g.fill(state ? TEXT_ON : TEXT_OFF);
-		g.text(label, posX, posY);
+	public void draw(PGraphics g, int mouseX, int mouseY, boolean icon)
+	{
+		g.fill(state ? BACKGROUND_ON : BACKGROUND_OFF);
+		if (icon) g.noStroke();
+		else g.stroke(isOver(mouseX, mouseY) ? STROKE_HOVER : STROKE_NORMAL);
+		g.ellipse(getPosX(), getPosY(), getSize(), getSize());
+
+		if (!icon) {
+			g.fill(state ? TEXT_ON : TEXT_OFF);
+			g.text(label, getPosX(), getPosY());
+		}
 	}
 }

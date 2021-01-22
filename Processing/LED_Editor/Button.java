@@ -35,19 +35,9 @@ public class Button
 		return label;
 	}
 
-	public void setPosX(int posX)
-	{
-		this.posX = posX;
-	}
-
 	public int getPosX()
 	{
 		return posX;
-	}
-
-	public void setPosY(int posY)
-	{
-		this.posY = posY;
 	}
 
 	public int getPosY()
@@ -55,29 +45,14 @@ public class Button
 		return posY;
 	}
 
-	public void setSizeX(int sizeX)
-	{
-		this.sizeX = sizeX;
-	}
-
 	public int getSizeX()
 	{
 		return sizeX;
 	}
 
-	public void setSizeY(int sizeY)
-	{
-		this.sizeY = sizeY;
-	}
-
 	public int getSizeY()
 	{
 		return sizeY;
-	}
-
-	public void setHotkey(char hotkey)
-	{
-		this.hotkey = hotkey;
 	}
 
 	public char getHotkey()
