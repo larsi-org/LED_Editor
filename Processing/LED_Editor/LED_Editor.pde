@@ -1,8 +1,8 @@
 import java.util.Vector;
 
-static String DIRECTORY = "led_16x16";
+//static String DIRECTORY = "led_16x16";
 //static String DIRECTORY = "cube3";
-//static String DIRECTORY = "hex10";
+static String DIRECTORY = "hex10";
 //static String DIRECTORY = "circle10";
 
 // colors
@@ -42,17 +42,22 @@ boolean [] clipboard;
 
 // Buttons
 Button[] buttons = {
-	new Button("<<",        MENU_DX +  30, MENU_DY + 25, 40, 24, ','),
-	new Button(">>",        MENU_DX + 170, MENU_DY + 25, 40, 24, '.'),
-	new Button("Copy",      MENU_DX + 255, MENU_DY + 25, 80, 24, 'c'),
-	new Button("Paste",     MENU_DX + 345, MENU_DY + 25, 80, 24, 'v'),
-	new Button("Clear",     MENU_DX + 455, MENU_DY + 25, 80, 24, ' '),
-	new Button("Invert",    MENU_DX + 545, MENU_DY + 25, 80, 24, 'i'),
-	new Button("<< Ins",    MENU_DX + 645, MENU_DY + 25, 60, 24, '['),
-	new Button("Del",       MENU_DX + 705, MENU_DY + 25, 40, 24, DELETE),
-	new Button("Ins >>",    MENU_DX + 765, MENU_DY + 25, 60, 24, ']'),
-	new Button("Generate",  MENU_DX + 855, MENU_DY + 25, 80, 24, 'g'),
-	new Button("Quit",      MENU_DX + 945, MENU_DY + 25, 80, 24, 'q')
+	new Button("<<",        MENU_DX +   30, MENU_DY + 25, 40, 24, ','),
+	new Button(">>",        MENU_DX +  170, MENU_DY + 25, 40, 24, '.'),
+
+	new Button("Copy",      MENU_DX +  260, MENU_DY + 25, 80, 24, 'c'),
+	new Button("Paste",     MENU_DX +  350, MENU_DY + 25, 80, 24, 'v'),
+
+	new Button("Clear",     MENU_DX +  460, MENU_DY + 25, 80, 24, ' '),
+	new Button("Invert",    MENU_DX +  550, MENU_DY + 25, 80, 24, 'i'),
+	new Button("Random",    MENU_DX +  640, MENU_DY + 25, 80, 24, 'r'),
+
+	new Button("<< Ins",    MENU_DX +  750, MENU_DY + 25, 60, 24, '['),
+	new Button("Del",       MENU_DX +  810, MENU_DY + 25, 40, 24, DELETE),
+	new Button("Ins >>",    MENU_DX +  870, MENU_DY + 25, 60, 24, ']'),
+
+	new Button("Generate",  MENU_DX +  980, MENU_DY + 25, 80, 24, 'g'),
+	new Button("Quit",      MENU_DX + 1545, MENU_DY + 25, 80, 24, 'q')
 };
 
 int duration = 50;
