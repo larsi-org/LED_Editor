@@ -60,7 +60,7 @@ int duration = 50;
 /** Processing: setup() */
 void setup()
 {
-	size(1200, 850);
+	size(1600, 850);
 	textFont(loadFont("Univers45.vlw"), 16);
 	textAlign(CENTER, CENTER);
 	smooth();
@@ -108,6 +108,24 @@ void setup()
 	states.add(temp);
 }
 
+void drawLEDs(PGraphics g, int dx, int dy, int a, int current_frame, boolean icon)
+{
+	int f = round(0.9 * a);
+	for (int i = 0; i < leds.length; i++) {
+		leds[i].setState(((boolean[])states.get(current_frame))[i]); // copy current frame to LEDs
+		if (icon) leds[i].draw(g, dx, dy, f);
+		else leds[i].draw(g, dx, dy, f, mouseX, mouseY);
+	}
+
+	// border lines
+	stroke(STROKE_DIV);
+	a--;
+	line(dx - a, dy - a, dx + a, dy - a);
+	line(dx - a, dy + a, dx + a, dy + a);
+	line(dx - a, dy - a, dx - a, dy + a);
+	line(dx + a, dy - a, dx + a, dy + a);
+}
+
 /** Processing: draw() */
 void draw()
 {
@@ -117,32 +135,15 @@ void draw()
 	currentLabel.setLabel("" + (1 + current) + " / " + states.size());
 	currentLabel.draw(g);
 
-	// divider lines
-	stroke(STROKE_DIV);
-	line(   0,  49, 1199,  49);
-	line(   0, 849, 1199, 849);
-	line(   0,  49,    0, 849);
-	line(1199,  49, 1199, 849);
-
-	for (int i = 0; i < 4; i++)
-		line(799 + 100 * i, 50, 799 + 100 * i, 849);
-	for (int i = 0; i < 7; i++)
-		line(799, 149 + 100 * i, 1199, 149 + 100 * i);
-
 	// draw buttons
 	for (int i = 0; i < buttons.length; i++)
 		buttons[i].draw(g, mouseX, mouseY);
 
 	// draw thumb LEDs
 	for (int ty = 0; ty < 8; ty++) {
-		for (int tx = 0; tx < 4; tx++) {
-			int ti = tx + 4 * ty;
-			if (ti < states.size()) {
-				for (int i = 0; i < leds.length; i++) {
-					leds[i].setState(((boolean[])states.get(ti))[i]); // copy current frame to LEDs
-					leds[i].draw(g, 850 + tx * 100, 100 + ty * 100, 45);
-				}
-			}
+		for (int tx = 0; tx < 8; tx++) {
+			int ti = tx + 8 * ty;
+			if (ti < states.size()) drawLEDs(g, 850 + tx * 100, 100 + ty * 100, 50, ti, true);
 		}
 	}
 
@@ -152,10 +153,9 @@ void draw()
 		line(leds[lines[i][0]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][0]].getPosY(LEDS_DY, LEDS_F), leds[lines[i][1]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][1]].getPosY(LEDS_DY, LEDS_F));
 
 	// draw main LEDs
-	for (int i = 0; i < leds.length; i++) {
-		leds[i].setState(((boolean[])states.get(current))[i]); // copy current frame to LEDs
-		leds[i].draw(g, LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY);
-	}
+	drawLEDs(g, LEDS_DX, LEDS_DY, LEDS_DX, current, false);
+
+	//executeKey('r');
 }
 
 void executeKey(char key)
@@ -197,6 +197,13 @@ void executeKey(char key)
 		break;
 	case 'v': // copy clipboard to frame
 		for (int i = 0; i < leds.length; i++) ((boolean[])states.get(current))[i] = clipboard[i];
+		break;
+	case 'r': // random
+		int i = int(random(leds.length));
+		((boolean[])states.get(current))[i] = !((boolean[])states.get(current))[i];
+		int j = i;
+		while ((j = symmetry[j]) != i)
+			((boolean[])states.get(current))[j] = !((boolean[])states.get(current))[j];
 		break;
 	case 'g': // generate source code of animation
 		generate();

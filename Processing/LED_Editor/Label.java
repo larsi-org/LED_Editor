@@ -60,6 +60,6 @@ public class Label
 		g.rect(getPosX() - getSizeX() / 2, getPosY() - getSizeY() / 2, getSizeX(), getSizeY());
 
 		g.fill(TEXT);
-		g.text(label, getSizeX(), getSizeY());
+		g.text(label, getPosX(), getPosY());
 	}
 }
