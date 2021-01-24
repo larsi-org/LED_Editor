@@ -115,7 +115,14 @@ void setup()
 
 void drawLEDs(PGraphics g, int dx, int dy, int a, int current_frame, boolean icon)
 {
+	a--;
 	int f = round(0.9 * a);
+
+	// draw main wires
+	stroke(STROKE_WIRE);
+	for (int i = 0; i < lines.length; i++)
+		line(leds[lines[i][0]].getPosX(dx, f), leds[lines[i][0]].getPosY(dy, f), leds[lines[i][1]].getPosX(dx, f), leds[lines[i][1]].getPosY(dy, f));
+
 	for (int i = 0; i < leds.length; i++) {
 		leds[i].setState(((boolean[])states.get(current_frame))[i]); // copy current frame to LEDs
 		if (icon) leds[i].draw(g, dx, dy, f);
@@ -124,7 +131,6 @@ void drawLEDs(PGraphics g, int dx, int dy, int a, int current_frame, boolean ico
 
 	// border lines
 	stroke(STROKE_DIV);
-	a--;
 	line(dx - a, dy - a, dx + a, dy - a);
 	line(dx - a, dy + a, dx + a, dy + a);
 	line(dx - a, dy - a, dx - a, dy + a);
@@ -151,11 +157,6 @@ void draw()
 			if (ti < states.size()) drawLEDs(g, 850 + tx * 100, 100 + ty * 100, 50, ti, true);
 		}
 	}
-
-	// draw main wires
-	stroke(STROKE_WIRE);
-	for (int i = 0; i < lines.length; i++)
-		line(leds[lines[i][0]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][0]].getPosY(LEDS_DY, LEDS_F), leds[lines[i][1]].getPosX(LEDS_DX, LEDS_F), leds[lines[i][1]].getPosY(LEDS_DY, LEDS_F));
 
 	// draw main LEDs
 	drawLEDs(g, LEDS_DX, LEDS_DY, LEDS_DX, current, false);
