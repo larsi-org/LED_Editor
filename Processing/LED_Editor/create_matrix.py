@@ -55,7 +55,6 @@ def find_symmetry(a):
 def create_matrix(dim_x, dim_y):
 	directory = "led_{}".format(dim_x) if dim_y == 1 else "led_{}x{}".format(dim_x, dim_y)
 	coords = open('data/{}/coords.txt'.format(directory), 'w')
-	#lines = open('data/{}/lines.txt'.format(directory), 'w')
 	symmetry = open('data/{}/symmetry.txt'.format(directory), 'w')
 
 
@@ -87,7 +86,6 @@ def create_matrix(dim_x, dim_y):
 
 
 	coords.close()
-	#lines.close()
 	symmetry.close()
 
 

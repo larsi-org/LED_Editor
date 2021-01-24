@@ -66,7 +66,6 @@ def find_symmetry(a):
 
 def create_hex(n):
 	coords = open('data/hex{}/coords.txt'.format(n), 'w')
-	lines = open('data/hex{}/lines.txt'.format(n), 'w')
 	symmetry = open('data/hex{}/symmetry.txt'.format(n), 'w')
 
 
@@ -83,7 +82,6 @@ def create_hex(n):
 			}
 			all_coords.append(p)
 			print("{}\t{}\t{}\t{}".format(p['name'], pretty(p['x']), pretty(p['y']), 0.1), file = coords)
-		print("{}\t{}".format(i_start, i_start + i_cnt - 1), file = lines)
 
 
 	all_coords = []
@@ -120,7 +118,6 @@ def create_hex(n):
 
 
 	coords.close()
-	lines.close()
 	symmetry.close()
 
 
@@ -128,7 +125,6 @@ def create_circle(n):
 	all_coords = []
 
 	coords = open('data/circle{}/coords.txt'.format(n), 'w')
-	lines = open('data/circle{}/lines.txt'.format(n), 'w')
 	symmetry = open('data/circle{}/symmetry.txt'.format(n), 'w')
 
 	i = 0
@@ -160,7 +156,6 @@ def create_circle(n):
 			all_coords.append(p)
 			print("{}\t{}\t{}\t{}".format(p['name'], pretty(p['x']), pretty(p['y']), 0.1), file = coords)
 			i += 1
-		# print("{}\t{}".format(i_start, i_start + i_cnt - 1), file = lines)
 
 
 	find_symmetry(all_coords)
@@ -169,7 +164,6 @@ def create_circle(n):
 
 
 	coords.close()
-	lines.close()
 	symmetry.close()
 
 
