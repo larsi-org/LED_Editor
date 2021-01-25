@@ -1,7 +1,7 @@
 import java.util.Vector;
 
-//static String DIRECTORY = "led_16x16";
 //static String DIRECTORY = "cube3";
+//static String DIRECTORY = "led_16x16";
 static String DIRECTORY = "hex10";
 //static String DIRECTORY = "circle10";
 
