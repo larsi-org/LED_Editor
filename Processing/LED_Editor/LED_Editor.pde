@@ -6,7 +6,8 @@ static String DIRECTORY = "hex10";
 //static String DIRECTORY = "circle10";
 
 // colors
-static int FILL_BACKGROUND = 0xFF222222;
+static int BACKGROUND      = 0xFF111111;
+static int FILL_BACKGROUND = 0xFF333333;
 static int STROKE_DIV      = 0xFF336699;
 static int STROKE_WIRE     = 0xFF666666;
 
@@ -118,6 +119,11 @@ void drawLEDs(PGraphics g, int dx, int dy, int a, int current_frame, boolean ico
 	a--;
 	int f = round(0.9 * a);
 
+	// border lines
+	stroke(STROKE_DIV);
+	fill(BACKGROUND);
+	rect(dx - a, dy - a, 2 * a, 2 * a);
+
 	// draw main wires
 	stroke(STROKE_WIRE);
 	for (int i = 0; i < lines.length; i++)
@@ -128,13 +134,6 @@ void drawLEDs(PGraphics g, int dx, int dy, int a, int current_frame, boolean ico
 		if (icon) leds[i].draw(g, dx, dy, f);
 		else leds[i].draw(g, dx, dy, f, mouseX, mouseY);
 	}
-
-	// border lines
-	stroke(STROKE_DIV);
-	line(dx - a, dy - a, dx + a, dy - a);
-	line(dx - a, dy + a, dx + a, dy + a);
-	line(dx - a, dy - a, dx - a, dy + a);
-	line(dx + a, dy - a, dx + a, dy + a);
 }
 
 /** Processing: draw() */
