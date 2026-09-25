@@ -25,6 +25,11 @@ const LEDS_DX = DIM2;
 const LEDS_DY = DIM2; // buttons/label used to live in a reserved band above this; now on-page HTML
 const LEDS_F  = Math.round(0.9 * DIM2);
 
+// thumbnails sit below the main grid (not beside it - that made the canvas
+// twice as wide as it needed to be, always overflowing the page)
+const THUMB_GAP = 20;
+const THUMB_TOP = DIM + THUMB_GAP;
+
 // LEDs
 let leds = [];
 
@@ -44,7 +49,7 @@ let current = 0;
 let clipboard = [];
 
 function setup() {
-	const canvas = createCanvas(1600, 800);
+	const canvas = createCanvas(DIM, THUMB_TOP + 100); // starts at 1 thumbnail row; grows with the frame count
 	canvas.parent('sketch-holder');
 	canvas.elt.oncontextmenu = () => false; // right-click toggles a single LED, don't show the browser menu
 	textAlign(CENTER, CENTER);
@@ -96,12 +101,14 @@ function draw() {
 	if (leds.length === 0) return; // layout still loading
 
 	updateToolbarUI();
+	updateCanvasHeight();
 
-	// thumbnails, 8x8
-	for (let ty = 0; ty < 8; ty++) {
+	// thumbnails, 8 wide, up to 8 rows
+	const rows = Math.min(8, Math.ceil(states.length / 8));
+	for (let ty = 0; ty < rows; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
 			const ti = tx + 8 * ty;
-			if (ti < states.length) drawLEDs(850 + tx * 100, 50 + ty * 100, 50, ti, true);
+			if (ti < states.length) drawLEDs(50 + tx * 100, THUMB_TOP + 50 + ty * 100, 50, ti, true);
 		}
 	}
 
@@ -207,6 +214,17 @@ function mouseReleased() {
 function updateToolbarUI() {
 	document.getElementById('frame-counter').textContent = `${current + 1} / ${states.length}`;
 	document.getElementById('delete-btn').disabled = states.length <= 1;
+}
+
+// grow/shrink the canvas with the actual frame count instead of always reserving
+// the full 8 rows of thumbnails (mostly-empty gray space for a small animation)
+let lastThumbRows = 1; // matches createCanvas()'s initial height
+
+function updateCanvasHeight() {
+	const rows = Math.min(8, Math.ceil(states.length / 8)); // states always has >=1 frame, so rows >= 1
+	if (rows === lastThumbRows) return;
+	lastThumbRows = rows;
+	resizeCanvas(DIM, THUMB_TOP + rows * 100);
 }
 
 function wireToolbar() {
