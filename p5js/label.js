@@ -1,5 +1,3 @@
-// Port of Processing/LED_Editor/Label.java
-
 class Label {
 	static BACKGROUND    = '#336699';
 	static TEXT          = '#000000';

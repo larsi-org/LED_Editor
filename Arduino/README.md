@@ -6,6 +6,6 @@ larsi.org point here for the sketch source, but the sketches themselves were
 never committed to this repo (the "Arduino Code" section on both pages is
 empty too) - see each subfolder's README.
 
-Each sketch reads a bitmap animation exported by the `Processing/LED_Editor`
-app's `g` (generate) command: one line per frame, one `0`/`1` character per
-LED in the order it appears in that layout's `data/<layout>/coords.txt`.
+Each sketch reads a bitmap animation exported by the `p5js/` app's Generate
+command: one line per frame, one `0`/`1` character per LED in the order it
+appears in that layout's `p5js/layouts/<layout>.json`.

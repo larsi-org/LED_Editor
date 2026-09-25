@@ -1,11 +1,7 @@
-// Port of Processing/LED_Editor/LED_Editor.pde
-//
-// Reuses the existing per-layout data files instead of duplicating them -
-// fetched relative to this page, so it must be served (not opened via
-// file://) from somewhere that also serves ../Processing/LED_Editor/data/.
-// See README.md.
+// Must be served over HTTP, not opened as file:// (browsers block fetch()
+// of local files). See README.md.
 
-const DATA_BASE = '../Processing/LED_Editor/data/';
+const DATA_BASE = 'layouts/';
 
 const LAYOUTS = [
 	'circle3', 'circle4', 'circle5', 'circle6', 'circle7', 'circle8', 'circle9', 'circle10', 'circle11', 'circle12', 'circle13',
@@ -84,39 +80,15 @@ function setup() {
 	loadLayout(directory);
 }
 
-async function fetchLines(path) {
-	const res = await fetch(path);
-	if (!res.ok) return null;
-	const text = await res.text();
-	return text.split('\n').map((line) => line.replace('\r', '')).filter((line) => line.length > 0);
-}
-
 async function loadLayout(name) {
 	leds = []; // draw() bails out while this is empty, so the canvas just goes blank during the fetch
 
-	const base = DATA_BASE + name + '/';
-
-	const coordLines = await fetchLines(base + 'coords.txt');
-	const newLeds = coordLines.map((line) => {
-		const [label, x, y, r] = line.split('\t');
-		return new Checkbox(label, parseFloat(x), parseFloat(y), parseFloat(r), false);
-	});
-
-	const newSymmetry = newLeds.map((_, i) => i);
-	const symmetryLines = await fetchLines(base + 'symmetry.txt');
-	if (symmetryLines) {
-		symmetryLines.forEach((line, i) => {
-			newSymmetry[i] = parseInt(line, 10);
-		});
-	}
-
-	const lineLines = await fetchLines(base + 'lines.txt');
-	const newLines = lineLines ? lineLines.map((line) => line.split('\t').map(Number)) : [];
+	const data = await (await fetch(DATA_BASE + name + '.json')).json();
 
 	directory = name;
-	leds = newLeds;
-	symmetry = newSymmetry;
-	ledLines = newLines;
+	leds = data.leds.map((led, i) => new Checkbox(String(i + 1), led.x, led.y, led.r, false));
+	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
+	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
 	states = [leds.map(() => false)];
 	current = 0;

@@ -1,5 +1,3 @@
-// Port of Processing/LED_Editor/Checkbox.java
-
 class Checkbox {
 	static BACKGROUND_OFF = '#660000';
 	static BACKGROUND_ON  = '#ff3333';
@@ -43,8 +41,7 @@ class Checkbox {
 		return x * x + y * y <= r * r;
 	}
 
-	// mx/my omitted => icon mode (thumbnails), matching the Processing
-	// draw(g, dx, dy, f) / draw(g, dx, dy, f, mouseX, mouseY) overload pair
+	// mx/my omitted => icon mode (thumbnails), full mode otherwise
 	draw(dx, dy, f, mx, my) {
 		const icon = mx === undefined;
 
