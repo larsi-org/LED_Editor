@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LED Editor</title>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.11.13/lib/p5.min.js"
+	integrity="sha384-+4pFSzqrHIcjFoiZQ8s1jUHqNylTGybto+iELDyMA+UQ0UhpTH0B92zF4Bg0mawP"
+	crossorigin="anonymous"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>LED Editor</h1>
+
+<div id="toolbar">
+	<label for="layout">Layout</label>
+	<select id="layout"></select>
+</div>
+
+<div id="sketch-holder"></div>
+
+<div id="output" hidden>
+	<h2>Generated animation</h2>
+	<p>One line per frame, one <code>0</code>/<code>1</code> per LED (order matches <code>coords.txt</code>).</p>
+	<textarea id="output-text" rows="12" readonly></textarea>
+	<div id="output-buttons">
+		<button id="copy-btn">Copy to clipboard</button>
+		<button id="close-output-btn">Close</button>
+	</div>
+</div>
+
+<script src="checkbox.js"></script>
+<script src="button.js"></script>
+<script src="label.js"></script>
+<script src="sketch.js"></script>
+
+</body>
+</html>

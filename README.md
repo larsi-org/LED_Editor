@@ -15,5 +15,7 @@ cube, an LED shield, and an addressable-LED snowflake. Each project's write-up
 
 - `Processing/` - a small Processing app for laying out LED animation frames
   by hand and exporting them as bitmaps; see its own README
+- `p5js/` - a p5.js port of the Processing app, runs in a browser; see its
+  own README
 - `Eagle/` - schematic and board files for the LED_6x5 and LED_Cube3 shields
 - `Arduino/` - firmware for the shields (see caveat in its own README)

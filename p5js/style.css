@@ -1,0 +1,45 @@
+body {
+	background: #1a1a1a;
+	color: #eee;
+	font-family: sans-serif;
+	padding: 16px;
+}
+
+a {
+	color: #6cf;
+}
+
+#toolbar {
+	margin-bottom: 8px;
+}
+
+#toolbar select {
+	font-size: 14px;
+	padding: 2px 6px;
+}
+
+#sketch-holder canvas {
+	display: block;
+}
+
+#output {
+	margin-top: 16px;
+	max-width: 1600px;
+}
+
+#output textarea {
+	width: 100%;
+	box-sizing: border-box;
+	font-family: monospace;
+	background: #111;
+	color: #eee;
+	border: 1px solid #444;
+}
+
+#output-buttons {
+	margin-top: 8px;
+}
+
+#output-buttons button {
+	margin-right: 8px;
+}
