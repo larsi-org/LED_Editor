@@ -18,14 +18,11 @@ const FILL_BACKGROUND = '#333333';
 const STROKE_DIV      = '#336699';
 const STROKE_WIRE     = '#666666';
 
-const MENU_DX = 0;
-const MENU_DY = 0;
-
 const DIM  = 800;
 const DIM2 = DIM / 2;
 
 const LEDS_DX = DIM2;
-const LEDS_DY = 50 + DIM2;
+const LEDS_DY = DIM2; // buttons/label used to live in a reserved band above this; now on-page HTML
 const LEDS_F  = Math.round(0.9 * DIM2);
 
 // LEDs
@@ -42,41 +39,18 @@ let states = [];
 
 // current frame index
 let current = 0;
-let currentLabel;
 
 // clipboard
 let clipboard = [];
 
-// Buttons
-let buttons = [];
-
 function setup() {
-	const canvas = createCanvas(1600, 850);
+	const canvas = createCanvas(1600, 800);
 	canvas.parent('sketch-holder');
 	canvas.elt.oncontextmenu = () => false; // right-click toggles a single LED, don't show the browser menu
 	textAlign(CENTER, CENTER);
 
-	currentLabel = new Label('', MENU_DX + 100, MENU_DY + 25, 80, 24);
-
-	buttons = [
-		new Button('<<',       MENU_DX +   30, MENU_DY + 25, 40, 24, ','),
-		new Button('>>',       MENU_DX +  170, MENU_DY + 25, 40, 24, '.'),
-
-		new Button('Copy',     MENU_DX +  260, MENU_DY + 25, 80, 24, 'c'),
-		new Button('Paste',    MENU_DX +  350, MENU_DY + 25, 80, 24, 'v'),
-
-		new Button('Clear',    MENU_DX +  460, MENU_DY + 25, 80, 24, ' '),
-		new Button('Invert',   MENU_DX +  550, MENU_DY + 25, 80, 24, 'i'),
-		new Button('Random',   MENU_DX +  640, MENU_DY + 25, 80, 24, 'r'),
-
-		new Button('<< Ins',   MENU_DX +  750, MENU_DY + 25, 60, 24, '['),
-		new Button('Del',      MENU_DX +  810, MENU_DY + 25, 40, 24, 'Delete'),
-		new Button('Ins >>',   MENU_DX +  870, MENU_DY + 25, 60, 24, ']'),
-
-		new Button('Generate', MENU_DX +  980, MENU_DY + 25, 80, 24, 'g')
-	];
-
 	populateLayoutSelect();
+	wireToolbar();
 	loadLayout(directory);
 }
 
@@ -121,16 +95,13 @@ function draw() {
 
 	if (leds.length === 0) return; // layout still loading
 
-	currentLabel.setLabel(`${current + 1} / ${states.length}`);
-	currentLabel.draw();
-
-	for (const b of buttons) b.draw(mouseX, mouseY);
+	updateToolbarUI();
 
 	// thumbnails, 8x8
 	for (let ty = 0; ty < 8; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
 			const ti = tx + 8 * ty;
-			if (ti < states.length) drawLEDs(850 + tx * 100, 100 + ty * 100, 50, ti, true);
+			if (ti < states.length) drawLEDs(850 + tx * 100, 50 + ty * 100, 50, ti, true);
 		}
 	}
 
@@ -197,12 +168,24 @@ function generate() {
 	document.getElementById('output').hidden = false;
 }
 
+// Toolbar buttons are real <button> elements now (see index.html) - keyboard hotkeys
+// still work as a shortcut, but only when focus isn't already on an interactive element
+// (a toolbar button, the layout <select>, ...), so Enter/Space still natively activate
+// whatever's focused instead of also triggering a hotkey underneath it.
+function isTypingTarget() {
+	const tag = document.activeElement && document.activeElement.tagName;
+	return tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA';
+}
+
 function keyPressed() {
-	return false; // the browser's default action (space/arrow scroll, Delete/Backspace nav) fires on
-	              // keydown, so it has to be blocked here - blocking it in keyReleased is too late
+	if (isTypingTarget()) return;
+	// the browser's default action (space/arrow scroll, Delete/Backspace nav) fires on
+	// keydown, so it has to be blocked here - blocking it in keyReleased is too late
+	if (key === ' ' || key === 'Delete' || key === 'Backspace') return false;
 }
 
 function keyReleased() {
+	if (isTypingTarget()) return;
 	executeKey(key);
 	return false;
 }
@@ -214,17 +197,22 @@ function mouseReleased() {
 		for (let i = 0; i < leds.length; i++) {
 			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) toggleWithSymmetry(i);
 		}
-		for (const b of buttons) {
-			if (b.isOver(mouseX, mouseY)) executeKey(b.hotkey);
-		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
 			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) states[current][i] = !states[current][i];
 		}
-		for (const b of buttons) {
-			if (b.isOver(mouseX, mouseY)) executeKey(b.hotkey);
-		}
 	}
+}
+
+function updateToolbarUI() {
+	document.getElementById('frame-counter').textContent = `${current + 1} / ${states.length}`;
+	document.getElementById('delete-btn').disabled = states.length <= 1;
+}
+
+function wireToolbar() {
+	document.querySelectorAll('#toolbar .tb-btn[data-key]').forEach((btn) => {
+		btn.addEventListener('click', () => executeKey(btn.dataset.key));
+	});
 }
 
 function populateLayoutSelect() {

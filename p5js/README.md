@@ -2,11 +2,18 @@
 
 A [p5.js](https://p5js.org/) app for laying out LED animation frames by hand:
 click LEDs on/off, step through frames, and export the result as bitmap rows
-to paste into Arduino firmware. Originally a port of a Processing sketch
-(`sketch.js`/`checkbox.js`/`button.js`/`label.js` still mirror that split into
-`LED_Editor.pde`/`Checkbox.java`/`Button.java`/`Label.java`), but the
-Processing version was removed once this one had full feature parity - this
-is now the only editor in the repo.
+to paste into Arduino firmware. Originally a port of a Processing sketch, but
+the Processing version was removed once this one had full feature parity -
+this is now the only editor in the repo.
+
+Only the LED grid itself is drawn on `<canvas>` (`checkbox.js`'s `Checkbox`
+class) - the toolbar (layout picker, frame nav, clipboard, generate, ...) is
+real HTML in `index.html`, each button wired straight to `executeKey()` in
+`sketch.js`. That used to all be canvas-drawn too (a literal port of
+Processing's button-widget classes, which don't exist in the browser's DOM),
+but there's no reason to hand-roll buttons when p5.js runs happily alongside
+real ones - real `<button>`s get native hover/focus/keyboard handling for
+free, and don't need per-frame hit-testing against the mouse position.
 
 Must be served over HTTP, not opened directly as a `file://` URL (browsers
 block `fetch()` of local files). From the repo root:
@@ -19,7 +26,8 @@ then open `http://localhost:8000/p5js/`.
 
 ## Layout
 
-- `sketch.js` / `checkbox.js` / `button.js` / `label.js` - the app
+- `index.html` / `style.css` - the toolbar and page chrome
+- `sketch.js` / `checkbox.js` - the app logic and the LED grid's canvas drawing
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
 - `create_matrix.py` - generates `layouts/led_*.json` for the rectangular

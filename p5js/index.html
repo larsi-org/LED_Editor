@@ -6,18 +6,56 @@
 <script src="https://cdn.jsdelivr.net/npm/p5@1.11.13/lib/p5.min.js"
 	integrity="sha384-+4pFSzqrHIcjFoiZQ8s1jUHqNylTGybto+iELDyMA+UQ0UhpTH0B92zF4Bg0mawP"
 	crossorigin="anonymous"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.0/css/all.min.css" rel="stylesheet"
+	integrity="sha384-sTlsophtwz/I4myskS3OIJf5VvEojkXKZyBTWZm0YD/K1pN7C5wpBPLyrsbr1SU2" crossorigin="anonymous">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <h1>LED Editor</h1>
 
-<div id="toolbar">
-	<label for="layout">Layout</label>
-	<select id="layout"></select>
-</div>
+<div id="led-editor">
+	<div id="toolbar">
+		<div class="tb-group">
+			<label for="layout">Layout</label>
+			<select id="layout"></select>
+		</div>
 
-<div id="sketch-holder"></div>
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key="," aria-label="Previous frame"><i class="fas fa-chevron-left"></i></button>
+			<span id="frame-counter" class="tb-readout">1 / 1</span>
+			<button class="tb-btn" data-key="." aria-label="Next frame"><i class="fas fa-chevron-right"></i></button>
+		</div>
+
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key="c"><i class="fas fa-copy"></i> Copy</button>
+			<button class="tb-btn" data-key="v"><i class="fas fa-paste"></i> Paste</button>
+		</div>
+
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key=" "><i class="fas fa-eraser"></i> Clear</button>
+			<button class="tb-btn" data-key="i"><i class="fas fa-circle-half-stroke"></i> Invert</button>
+			<button class="tb-btn" data-key="r"><i class="fas fa-shuffle"></i> Random</button>
+		</div>
+
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key="["><i class="fas fa-plus"></i> Insert Before</button>
+			<button class="tb-btn" id="delete-btn" data-key="Delete"><i class="fas fa-trash"></i> Delete</button>
+			<button class="tb-btn" data-key="]"><i class="fas fa-plus"></i> Insert After</button>
+		</div>
+
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key="g"><i class="fas fa-code"></i> Generate</button>
+		</div>
+	</div>
+
+	<div id="sketch-holder"></div>
+</div>
 
 <div id="output" hidden>
 	<h2>Generated animation</h2>
@@ -30,8 +68,6 @@
 </div>
 
 <script src="checkbox.js"></script>
-<script src="button.js"></script>
-<script src="label.js"></script>
 <script src="sketch.js"></script>
 
 </body>

@@ -9,13 +9,90 @@ a {
 	color: #6cf;
 }
 
+#led-editor {
+	background: #1a1a1a;
+}
+
 #toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
 	margin-bottom: 8px;
+	padding: 8px 10px;
+	background: #1f1f1f;
+	border: 1px solid #2c3540;
+}
+
+.tb-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tb-divider {
+	width: 1px;
+	align-self: stretch;
+	background: #2c3540;
+}
+
+#toolbar label {
+	font-size: 13px;
+	color: #9aa5b1;
 }
 
 #toolbar select {
 	font-size: 14px;
 	padding: 2px 6px;
+}
+
+.tb-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #262626;
+	color: #eee;
+	border: 1px solid #336699;
+	padding: 5px 10px;
+	font-size: 13px;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.tb-btn:hover {
+	background: #2f3f4f;
+	border-color: #4a80ad;
+}
+
+.tb-btn:focus-visible {
+	outline: 2px solid #6cf;
+	outline-offset: 1px;
+}
+
+.tb-btn:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.tb-btn:disabled:hover {
+	background: #262626;
+	border-color: #336699;
+}
+
+.tb-readout {
+	font-family: "SF Mono", "Courier New", monospace;
+	font-variant-numeric: tabular-nums;
+	font-size: 13px;
+	color: #ff8080;
+	background: #111;
+	border: 1px solid #333;
+	padding: 4px 8px;
+	min-width: 4.5em;
+	text-align: center;
+}
+
+#sketch-holder {
+	overflow-x: auto;
 }
 
 #sketch-holder canvas {
