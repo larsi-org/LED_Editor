@@ -54,8 +54,8 @@ then open `http://localhost:8000/p5js/`.
   is `(0, 0)`, edge is `±1`); `r` is the LED's dot size on that same scale.
 - `symmetry` - optional. `symmetry[i]` is "the next LED in LED `i`'s
   mirror-symmetry group": a left-click toggles LED `i`, then walks
-  `j = symmetry[j]` until it loops back to `i`, toggling each one along the
-  way - a cycle, not just a pair (hex/circle layouts have up to 6-way
+  `j = symmetry[j]` until it loops back to `i`, setting each one to `i`'s new
+  state - a cycle, not just a pair (hex/circle layouts have up to 6-way
   rotational symmetry near the center). Omitted entirely when no LED has a
   partner (every `led_*` grid layout, plus `cube3`).
 - `lines` - optional, only `cube3` has one. Each entry is a `[i0, i1]` pair

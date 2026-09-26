@@ -117,10 +117,15 @@ function draw() {
 }
 
 function toggleWithSymmetry(i) {
-	states[current][i] = !states[current][i];
+	// set the whole group to LED i's new state, rather than inverting each member
+	// independently - the group can be non-uniform (edited earlier with Symmetry off,
+	// or via right-click), and inverting each one wouldn't make it uniform again;
+	// it would just flip whatever mismatched pattern was already there
+	const newState = !states[current][i];
+	states[current][i] = newState;
 	let j = i;
 	while ((j = symmetry[j]) !== i) {
-		states[current][j] = !states[current][j];
+		states[current][j] = newState;
 	}
 }
 
