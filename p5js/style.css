@@ -91,12 +91,13 @@ a {
 	text-align: center;
 }
 
-#sketch-holder {
-	overflow-x: auto;
-}
-
 #sketch-holder canvas {
 	display: block;
+	max-width: 100%;
+	/* !important: p5 sets an inline height (its pixelDensity/retina handling) that a plain
+	   height:auto here can't override, which stretched the canvas into an oval when only
+	   max-width kicked in. p5 accounts for this CSS-vs-native size mismatch in mouseX/mouseY. */
+	height: auto !important;
 }
 
 #output {
