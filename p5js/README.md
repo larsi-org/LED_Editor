@@ -65,8 +65,10 @@ then open `http://localhost:8000/p5js/`.
 
 ## Controls
 
-Left-click an LED to toggle it (and its symmetric partner, if any);
-right-click toggles just that one LED, ignoring symmetry.
+Left-click an LED to toggle it (and its symmetric partner, if any); uncheck
+the toolbar's **Symmetry** checkbox (on by default), or right-click, to
+toggle just that one LED. Random respects the checkbox too; right-click
+always ignores symmetry regardless of it.
 
 - `,` / `.` - previous / next frame
 - `[` / `]` - insert a blank frame before / after the current one

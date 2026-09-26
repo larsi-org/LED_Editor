@@ -41,6 +41,18 @@ a {
 	color: #9aa5b1;
 }
 
+.tb-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.tb-checkbox input {
+	accent-color: #336699;
+	cursor: pointer;
+}
+
 #toolbar select {
 	font-size: 14px;
 	padding: 2px 6px;

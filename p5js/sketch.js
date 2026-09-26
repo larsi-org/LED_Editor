@@ -124,6 +124,15 @@ function toggleWithSymmetry(i) {
 	}
 }
 
+// left-click and Random respect the Symmetry checkbox; right-click always
+// bypasses it (toggleWithSymmetry directly) as a manual single-LED override
+let symmetryEnabled = true;
+
+function toggleLED(i) {
+	if (symmetryEnabled) toggleWithSymmetry(i);
+	else states[current][i] = !states[current][i];
+}
+
 function executeKey(key) {
 	if (leds.length === 0) return;
 
@@ -161,7 +170,7 @@ function executeKey(key) {
 			states[current] = clipboard.slice();
 			break;
 		case 'r': // random
-			toggleWithSymmetry(Math.floor(Math.random() * leds.length));
+			toggleLED(Math.floor(Math.random() * leds.length));
 			break;
 		case 'g': // generate source of animation
 			generate();
@@ -202,7 +211,7 @@ function mouseReleased() {
 
 	if (mouseButton === LEFT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) toggleWithSymmetry(i);
+			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) toggleLED(i);
 		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
@@ -230,6 +239,9 @@ function updateCanvasHeight() {
 function wireToolbar() {
 	document.querySelectorAll('#toolbar .tb-btn[data-key]').forEach((btn) => {
 		btn.addEventListener('click', () => executeKey(btn.dataset.key));
+	});
+	document.getElementById('symmetry-toggle').addEventListener('change', (e) => {
+		symmetryEnabled = e.target.checked;
 	});
 }
 
