@@ -114,8 +114,90 @@ function buildMatrix(dimX, dimY, zigzag) {
 			matrixLines.push([j * dimX, j * dimX + dimX - 1]);
 		}
 	}
+	// one line per column, top to bottom. Unlike rows, zigzag mirrors each row
+	// independently, so a given physical column can sit at a different array
+	// index per row - group by actual rendered x instead of assuming index
+	// i, i+dimX, i+2*dimX, ... stays at the same column.
+	if (dimY > 1) {
+		const byX = new Map();
+		matrixLeds.forEach((led, i) => {
+			const key = Math.round(led.x * 1e6);
+			if (!byX.has(key)) byX.set(key, []);
+			byX.get(key).push(i);
+		});
+		for (const col of byX.values()) {
+			if (col.length < 2) continue;
+			col.sort((a, b) => matrixLeds[a].y - matrixLeds[b].y);
+			matrixLines.push([col[0], col[col.length - 1]]);
+		}
+	}
 
-	applyLayoutData(`matrix ${dimX}×${dimY}`, { leds: matrixLeds, lines: matrixLines });
+	applyLayoutData(`matrix ${dimX}×${dimY}`, {
+		leds: matrixLeds,
+		lines: matrixLines,
+		symmetry: computeMatrixSymmetry(matrixLeds, dimX, dimY)
+	});
+}
+
+// Symmetry group of an n x m grid: horizontal flip, vertical flip, and 180°
+// rotation always apply (a rectangle mirrors onto itself either way, and a
+// 1-wide/1-tall strip degenerates to just the one meaningful reversal, since
+// the other flip becomes a no-op). A square (dimX === dimY) additionally gets
+// both diagonal flips and both 90° rotations, since only then does swapping
+// the two axes map the grid back onto itself - "n x n has the most symmetry,
+// n x m loses half, 1 x n keeps only first<->last, second<->second-to-last".
+//
+// Works from actual rendered (x, y), not row/column index, so it's already
+// correct under zigzag without special-casing it - same approach as hex/
+// circle's own generator (create_hex_circle.py), which also matches by real
+// coordinates rather than array position.
+function computeMatrixSymmetry(matrixLeds, dimX, dimY) {
+	const n = matrixLeds.length;
+	const keyOf = (x, y) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`;
+	const byPos = new Map();
+	matrixLeds.forEach((led, i) => byPos.set(keyOf(led.x, led.y), i));
+
+	const transforms = [
+		(x, y) => [-x, y],
+		(x, y) => [x, -y],
+		(x, y) => [-x, -y]
+	];
+	if (dimX === dimY) {
+		transforms.push(
+			(x, y) => [-y, x],
+			(x, y) => [y, -x],
+			(x, y) => [y, x],
+			(x, y) => [-y, -x]
+		);
+	}
+
+	const next = matrixLeds.map((_, i) => i); // default: no partner (self)
+	const assigned = new Array(n).fill(false);
+	for (let i = 0; i < n; i++) {
+		if (assigned[i]) continue;
+
+		// closure of i under every transform - the LEDs that are all mutual
+		// mirror images of each other, forming one symmetry cycle
+		const members = new Set([i]);
+		const stack = [i];
+		while (stack.length) {
+			const cur = stack.pop();
+			const { x, y } = matrixLeds[cur];
+			for (const t of transforms) {
+				const [tx, ty] = t(x, y);
+				const j = byPos.get(keyOf(tx, ty));
+				if (j !== undefined && !members.has(j)) {
+					members.add(j);
+					stack.push(j);
+				}
+			}
+		}
+
+		const orbit = Array.from(members).sort((a, b) => a - b);
+		orbit.forEach((idx) => { assigned[idx] = true; });
+		orbit.forEach((idx, k) => { next[idx] = orbit[(k + 1) % orbit.length]; });
+	}
+	return next;
 }
 
 function buildMatrixFromInputs() {
