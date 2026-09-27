@@ -103,7 +103,19 @@ function buildMatrix(dimX, dimY, zigzag) {
 		}
 		if (zigzag) direction *= -1;
 	}
-	applyLayoutData(`matrix ${dimX}×${dimY}`, { leds: matrixLeds });
+
+	// one line per row, left end to right end - a row's two ends are always at
+	// array indices j*dimX and j*dimX+dimX-1, regardless of zigzag (that only
+	// mirrors x position, not array order), and every LED in between is already
+	// colinear with them, so this alone draws straight across the whole row
+	const matrixLines = [];
+	if (dimX > 1) {
+		for (let j = 0; j < dimY; j++) {
+			matrixLines.push([j * dimX, j * dimX + dimX - 1]);
+		}
+	}
+
+	applyLayoutData(`matrix ${dimX}×${dimY}`, { leds: matrixLeds, lines: matrixLines });
 }
 
 function buildMatrixFromInputs() {
