@@ -45,7 +45,7 @@ this way instead of leaving the visitor to pick it from the dropdown:
 | [make/LedCube3](https://larsi.org/make/LedCube3/) | `cube3.json` |
 | [make/led_6x5](https://larsi.org/make/led_6x5/) | `led_6x5.json` |
 | [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `led_7x7.json` |
-| [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `led_hex3.json` |
+| [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `hex3.json` |
 | [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `led_5x1.json` |
 | [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `led_20x1.json` |
 | [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `led_5x1.json` |
@@ -61,14 +61,15 @@ No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
 so there's nothing left to commit a file for most shapes. The `led_*` files
 are exceptions: real hardware, kept as checked-in files so each layout
-doesn't depend on someone rebuilding it with the right settings -
+doesn't depend on someone rebuilding it with the right settings. `led_`
+names a Matrix (Custom) build specifically - hex/circle real hardware
+(there's currently only one, see below) keeps the bare `hexN`/`circleN`
+name instead -
 [LED 6x5 Shield](https://larsi.org/make/led_6x5) (`led_6x5`: W=6, H=5,
 Zigzag off), [LED Coffee Table](https://larsi.org/make/CoffeeTable)
 (`led_7x7`: W=7, H=7, Zigzag on - matching each project's actual wiring
-order), and five older electronics boards (single strips, one hex, one
-square matrix) -
-[ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) (`led_hex3`:
-Hex N=3, Zigzag off - a static Charlieplexed hexagon, not a wired strip),
+order), and four older electronics boards (single strips, one square
+matrix) -
 [ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) and
 [ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) (`led_5x1`),
 [ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) (`led_8x1`),
@@ -78,12 +79,15 @@ Hex N=3, Zigzag off - a static Charlieplexed hexagon, not a wired strip),
 builder then **Export Layout**, not hand-written - same as `cube3`, which
 has no live builder equivalent since it needs a `lines` list a flat shape
 doesn't.
-Only two `hex*` presets stay checked in now: `hex10` (real hardware -
-[Schneeflocke](https://larsi.org/make/Schneeflocke)) and `hex3` (kept as a
-small example, since it's the size most likely to get poked at first). The
-rest (`hex4`-`hex9`, `hex11`-`hex13`) were removed once Hex (Custom) could
-reproduce any of them live, same reasoning that removed all the `circle*`
-presets - none of them were tied to real hardware either.
+Only two `hex*` presets stay checked in now, and both are real hardware:
+`hex10` ([Schneeflocke](https://larsi.org/make/Schneeflocke), Zigzag on -
+a continuously wired strip) and `hex3`
+([ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/), Zigzag
+off - a static Charlieplexed board, not a wired strip, so unlike `hex10`
+its numbering doesn't need to snake row to row). The rest (`hex4`-`hex9`,
+`hex11`-`hex13`) were removed once Hex (Custom) could reproduce any of
+them live, same reasoning that removed all the `circle*` presets - none
+of those were tied to real hardware.
 
 ## Circle (Custom)
 
@@ -100,7 +104,8 @@ other row so LED numbering snakes back and forth (row 0 left-to-right, row
 1 right-to-left, ...) instead of always running left-to-right, matching
 how an LED strip is usually wired - continuing straight into the next row
 rather than a long return wire back to the start of each one. On by
-default (every checked-in `hex*` layout was built this way).
+default - `hex10` (a wired strip) needs it, `hex3` (a static board, not a
+strip) is the one checked-in exception built with it off.
 
 ## Matrix (Custom)
 
