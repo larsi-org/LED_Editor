@@ -35,7 +35,27 @@ The landing layout defaults to `hex10`, but `?layout=<name>.json` in the
 URL overrides it - e.g. `?layout=led_7x7.json` opens straight on the LED
 Coffee Table's layout. Handled entirely client-side (`sketch.js` reads
 `location.search` itself), so it works the same whether the page is served
-by `python3 -m http.server` here or by `index.php` on larsi.org.
+by `python3 -m http.server` here or by `index.php` on larsi.org. Every
+larsi.org page for a real piece of hardware links in with its own layout
+this way instead of leaving the visitor to pick it from the dropdown:
+
+| Page | `?layout=` |
+| --- | --- |
+| [make/Schneeflocke](https://larsi.org/make/Schneeflocke/) | `hex10.json` |
+| [make/LedCube3](https://larsi.org/make/LedCube3/) | `cube3.json` |
+| [make/led_6x5](https://larsi.org/make/led_6x5/) | `led_6x5.json` |
+| [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `led_7x7.json` |
+| [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `led_hex3.json` |
+| [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `led_5x1.json` |
+| [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `led_20x1.json` |
+| [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `led_5x1.json` |
+| [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `led_8x1.json` |
+| [electronics/ATmegaX8/Peggy2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/) | `led_25x25.json` |
+
+(ATtinyX5/led5 and ATmegaX8/led5 intentionally share `led_5x1.json` - both
+are a plain 5-LED row, just on different chips. make/'s own gallery tile
+for the editor links with no `?layout=` at all, since it's the tool's
+generic entry point, not tied to one project.)
 
 No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
