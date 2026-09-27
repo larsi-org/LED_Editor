@@ -31,6 +31,12 @@ then open `http://localhost:8000/p5js/`.
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
 
+The landing layout defaults to `hex10`, but `?layout=<name>.json` in the
+URL overrides it - e.g. `?layout=led_7x7.json` opens straight on the LED
+Coffee Table's layout. Handled entirely client-side (`sketch.js` reads
+`location.search` itself), so it works the same whether the page is served
+by `python3 -m http.server` here or by `index.php` on larsi.org.
+
 No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
 so there's nothing left to commit a file for most shapes. The `led_*` files

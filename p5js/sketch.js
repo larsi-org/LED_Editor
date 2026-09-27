@@ -22,6 +22,15 @@ const CUSTOM_BUILDERS = {
 
 let directory = 'hex10';
 
+// ?layout=<name>.json overrides the default landing layout - e.g.
+// ?layout=led_7x7.json opens straight on that layout instead of making the
+// visitor pick it from the dropdown themselves. Read straight off the URL
+// client-side, no server involvement needed.
+const layoutParam = new URLSearchParams(window.location.search).get('layout');
+if (layoutParam && /^[\w-]+\.json$/.test(layoutParam)) {
+	directory = layoutParam.replace(/\.json$/, '');
+}
+
 // colors
 const BACKGROUND      = '#111111';
 const FILL_BACKGROUND = '#333333';
