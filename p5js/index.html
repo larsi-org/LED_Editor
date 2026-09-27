@@ -21,6 +21,24 @@
 			<select id="layout"></select>
 		</div>
 
+		<span class="tb-divider" id="circle-divider" hidden></span>
+		<div class="tb-group" id="circle-controls" hidden>
+			<label for="circle-n">N</label>
+			<input type="number" id="circle-n" min="3" max="20" value="10">
+			<button class="tb-btn" id="circle-build-btn"><i class="fas fa-hammer"></i> Build</button>
+		</div>
+
+		<span class="tb-divider" id="hex-divider" hidden></span>
+		<div class="tb-group" id="hex-controls" hidden>
+			<label for="hex-n">N</label>
+			<input type="number" id="hex-n" min="3" max="20" value="10">
+			<label class="tb-checkbox" title="Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start">
+				<input type="checkbox" id="hex-zigzag" checked>
+				Zigzag
+			</label>
+			<button class="tb-btn" id="hex-build-btn"><i class="fas fa-hammer"></i> Build</button>
+		</div>
+
 		<span class="tb-divider" id="matrix-divider" hidden></span>
 		<div class="tb-group" id="matrix-controls" hidden>
 			<label for="matrix-width">W</label>

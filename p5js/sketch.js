@@ -12,7 +12,15 @@ const LAYOUTS = [
 	                     // (Custom) now, not saved as its own file
 ];
 
-const MATRIX_OPTION = '__matrix__'; // not a real layouts/*.json file - built live, see buildMatrixFromInputs()
+// pseudo-layouts, not real layouts/*.json files - built live instead, see
+// each build*FromInputs() function. Keyed by dropdown <option> value; each
+// entry names the toolbar group to show while it's selected and the
+// function that (re)builds it from that group's current inputs.
+const CUSTOM_BUILDERS = {
+	'__circle__': { label: 'Circle (Custom)', controls: 'circle-controls', divider: 'circle-divider', build: buildCircleFromInputs },
+	'__hex__': { label: 'Hex (Custom)', controls: 'hex-controls', divider: 'hex-divider', build: buildHexFromInputs },
+	'__matrix__': { label: 'Matrix (Custom)', controls: 'matrix-controls', divider: 'matrix-divider', build: buildMatrixFromInputs }
+};
 
 let directory = 'hex10';
 
@@ -141,50 +149,35 @@ function buildMatrix(dimX, dimY, zigzag) {
 	});
 }
 
-// Symmetry group of an n x m grid: horizontal flip, vertical flip, and 180°
-// rotation always apply (a rectangle mirrors onto itself either way, and a
-// 1-wide/1-tall strip degenerates to just the one meaningful reversal, since
-// the other flip becomes a no-op). A square (dimX === dimY) additionally gets
-// both diagonal flips and both 90° rotations, since only then does swapping
-// the two axes map the grid back onto itself - "n x n has the most symmetry,
-// n x m loses half, 1 x n keeps only first<->last, second<->second-to-last".
-//
-// Works from actual rendered (x, y), not row/column index, so it's already
-// correct under zigzag without special-casing it - same approach as hex/
-// circle's own generator (create_hex_circle.py), which also matches by real
-// coordinates rather than array position.
-function computeMatrixSymmetry(matrixLeds, dimX, dimY) {
-	const n = matrixLeds.length;
-	const keyOf = (x, y) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`;
+// Shared by every *Symmetry() below: given a layout's LEDs and a list of
+// candidate symmetry transforms ((x, y) -> [x, y]), find each LED's full
+// orbit by closing over all of them from its actual rendered position - the
+// LEDs that are all mutual mirror/rotation images of each other, wired into
+// one "next in cycle" cycle (see the layouts/*.json format in the README).
+// Working from real coordinates rather than row/column/ring index means this
+// is automatically correct under zigzag without special-casing it, the same
+// way hex/circle's own generator (create_hex_circle.py) always matched by
+// real (r, t) rather than array position. tolerance should match how far a
+// transform's floating-point result can drift from its true value - plain
+// sign flips are exact, but a rotation's sin/cos aren't, hence the two
+// different tolerances passed in below.
+function computeSymmetry(shapeLeds, transforms, tolerance) {
+	const n = shapeLeds.length;
+	const scale = 1 / tolerance;
+	const keyOf = (x, y) => `${Math.round(x * scale)},${Math.round(y * scale)}`;
 	const byPos = new Map();
-	matrixLeds.forEach((led, i) => byPos.set(keyOf(led.x, led.y), i));
+	shapeLeds.forEach((led, i) => byPos.set(keyOf(led.x, led.y), i));
 
-	const transforms = [
-		(x, y) => [-x, y],
-		(x, y) => [x, -y],
-		(x, y) => [-x, -y]
-	];
-	if (dimX === dimY) {
-		transforms.push(
-			(x, y) => [-y, x],
-			(x, y) => [y, -x],
-			(x, y) => [y, x],
-			(x, y) => [-y, -x]
-		);
-	}
-
-	const next = matrixLeds.map((_, i) => i); // default: no partner (self)
+	const next = shapeLeds.map((_, i) => i); // default: no partner (self)
 	const assigned = new Array(n).fill(false);
 	for (let i = 0; i < n; i++) {
 		if (assigned[i]) continue;
 
-		// closure of i under every transform - the LEDs that are all mutual
-		// mirror images of each other, forming one symmetry cycle
 		const members = new Set([i]);
 		const stack = [i];
 		while (stack.length) {
 			const cur = stack.pop();
-			const { x, y } = matrixLeds[cur];
+			const { x, y } = shapeLeds[cur];
 			for (const t of transforms) {
 				const [tx, ty] = t(x, y);
 				const j = byPos.get(keyOf(tx, ty));
@@ -202,9 +195,117 @@ function computeMatrixSymmetry(matrixLeds, dimX, dimY) {
 	return next;
 }
 
+// Symmetry group of an n x m grid: horizontal flip, vertical flip, and 180°
+// rotation always apply (a rectangle mirrors onto itself either way, and a
+// 1-wide/1-tall strip degenerates to just the one meaningful reversal, since
+// the other flip becomes a no-op). A square (dimX === dimY) additionally gets
+// both diagonal flips and both 90° rotations, since only then does swapping
+// the two axes map the grid back onto itself - "n x n has the most symmetry,
+// n x m loses half, 1 x n keeps only first<->last, second<->second-to-last".
+// These transforms are exact (pure sign flips/swaps), hence the tight 1e-6
+// tolerance.
+function computeMatrixSymmetry(matrixLeds, dimX, dimY) {
+	const transforms = [
+		(x, y) => [-x, y],
+		(x, y) => [x, -y],
+		(x, y) => [-x, -y]
+	];
+	if (dimX === dimY) {
+		transforms.push(
+			(x, y) => [-y, x],
+			(x, y) => [y, -x],
+			(x, y) => [y, x],
+			(x, y) => [-y, -x]
+		);
+	}
+	return computeSymmetry(matrixLeds, transforms, 1e-6);
+}
+
+// Symmetry group of a hex/circle shape: both are built as rings of 6, 12,
+// 18, ... points around a center, which always has full 12-fold dihedral
+// symmetry (D6) - 6 rotations (multiples of 60°) plus a mirror, regardless
+// of ring count or zigzag. Rotation involves sin/cos, which aren't exact in
+// floating point, so this needs a looser tolerance (0.001, matching
+// create_hex_circle.py's own f_equal) instead of computeMatrixSymmetry's 1e-6.
+function computeRadialSymmetry(shapeLeds) {
+	const transforms = [];
+	for (let k = 0; k < 6; k++) {
+		const theta = (k * 60 * Math.PI) / 180;
+		const cosT = Math.cos(theta);
+		const sinT = Math.sin(theta);
+		if (k > 0) transforms.push((x, y) => [x * cosT - y * sinT, x * sinT + y * cosT]);
+		// mirror across the x-axis (y -> -y), then that same rotation
+		transforms.push((x, y) => [x * cosT + y * sinT, x * sinT - y * cosT]);
+	}
+	return computeSymmetry(shapeLeds, transforms, 0.001);
+}
+
 function buildMatrixFromInputs() {
 	const clampDim = (id) => Math.min(32, Math.max(1, parseInt(document.getElementById(id).value, 10) || 1));
 	buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'), document.getElementById('matrix-zigzag').checked);
+}
+
+// port of create_hex_circle.py's create_circle() - N rings (plus a center
+// LED) of 6, 12, 18, ... points, growing outward. No zigzag option: unlike a
+// row-by-row grid or hex, going around each ring in one direction is already
+// a sensible order to solder in - nothing to snake back and forth across.
+function buildCircle(n) {
+	const circleLeds = [{ x: 0, y: 0, r: 0.1 }];
+	for (let c = 1; c < n; c++) {
+		const r = c / (n - 1);
+		const fA = 60 / c;
+		for (let a = 0; a < 6 * c; a++) {
+			const angle = (fA * a * Math.PI) / 180;
+			circleLeds.push({ x: r * Math.cos(angle), y: -r * Math.sin(angle), r: 0.1 });
+		}
+	}
+	applyLayoutData(`circle ${n}`, { leds: circleLeds, symmetry: computeRadialSymmetry(circleLeds) });
+}
+
+function buildCircleFromInputs() {
+	const n = Math.min(20, Math.max(3, parseInt(document.getElementById('circle-n').value, 10) || 3));
+	buildCircle(n);
+}
+
+// port of create_hex_circle.py's create_hex() - a hexagon built as 2n-1
+// rows, widest in the middle. zigzag mirrors alternate rows, same idea and
+// same reason as Matrix's: the physical strip continues straight into the
+// next row instead of a long return wire back to the start of each one.
+function buildHex(n, zigzag) {
+	const dx = 1 / (n - 1);
+	const dy = Math.sqrt(0.75) * dx;
+	const hexLeds = [];
+	let direction = 1;
+
+	function addRow(count, y) {
+		for (let i = 0; i < count; i++) {
+			const x = direction * dx * (i - (count - 1) / 2);
+			hexLeds.push({ x, y, r: 0.1 });
+		}
+	}
+
+	let count = n;
+	for (let row = 1; row < n; row++) {
+		addRow(count, dy * (row - n));
+		count += 1;
+		if (zigzag) direction *= -1;
+	}
+	count = 2 * n - 1;
+	addRow(count, 0);
+	count -= 1;
+	if (zigzag) direction *= -1;
+	for (let row = 1; row < n; row++) {
+		addRow(count, dy * row);
+		count -= 1;
+		if (zigzag) direction *= -1;
+	}
+
+	applyLayoutData(`hex ${n}`, { leds: hexLeds, symmetry: computeRadialSymmetry(hexLeds) });
+}
+
+function buildHexFromInputs() {
+	const n = Math.min(20, Math.max(3, parseInt(document.getElementById('hex-n').value, 10) || 3));
+	buildHex(n, document.getElementById('hex-zigzag').checked);
 }
 
 function drawLEDs(dx, dy, a, currentFrame, icon) {
@@ -414,6 +515,16 @@ function wireToolbar() {
 		symmetryEnabled = e.target.checked;
 	});
 
+	document.getElementById('circle-build-btn').addEventListener('click', buildCircleFromInputs);
+	document.getElementById('circle-n').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') buildCircleFromInputs();
+	});
+
+	document.getElementById('hex-build-btn').addEventListener('click', buildHexFromInputs);
+	document.getElementById('hex-n').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') buildHexFromInputs();
+	});
+
 	document.getElementById('matrix-build-btn').addEventListener('click', buildMatrixFromInputs);
 	['matrix-width', 'matrix-height'].forEach((id) => {
 		document.getElementById(id).addEventListener('keydown', (e) => {
@@ -432,18 +543,27 @@ function populateLayoutSelect() {
 		select.appendChild(option);
 	}
 
-	const matrixOption = document.createElement('option');
-	matrixOption.value = MATRIX_OPTION;
-	matrixOption.textContent = 'Matrix (Custom)';
-	select.appendChild(matrixOption);
+	for (const [value, { label }] of Object.entries(CUSTOM_BUILDERS)) {
+		const option = document.createElement('option');
+		option.value = value;
+		option.textContent = label;
+		select.appendChild(option);
+	}
 
 	select.addEventListener('change', () => {
 		document.getElementById('output').hidden = true;
-		const isMatrix = select.value === MATRIX_OPTION;
-		document.getElementById('matrix-controls').hidden = !isMatrix;
-		document.getElementById('matrix-divider').hidden = !isMatrix;
-		if (isMatrix) buildMatrixFromInputs();
-		else loadLayout(select.value);
+		for (const { controls, divider } of Object.values(CUSTOM_BUILDERS)) {
+			document.getElementById(controls).hidden = true;
+			document.getElementById(divider).hidden = true;
+		}
+		const custom = CUSTOM_BUILDERS[select.value];
+		if (custom) {
+			document.getElementById(custom.controls).hidden = false;
+			document.getElementById(custom.divider).hidden = false;
+			custom.build();
+		} else {
+			loadLayout(select.value);
+		}
 	});
 }
 
