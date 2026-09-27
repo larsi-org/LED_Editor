@@ -207,13 +207,44 @@ function executeKey(key) {
 		case 'g': // generate source of animation
 			generate();
 			break;
+		case 'e': // export the current layout as a layouts/*.json file
+			exportLayout();
+			break;
 	}
+}
+
+function showOutput(title, descHtml, text) {
+	document.getElementById('output-title').textContent = title;
+	document.getElementById('output-desc').innerHTML = descHtml;
+	document.getElementById('output-text').value = text;
+	document.getElementById('output').hidden = false;
 }
 
 function generate() {
 	const text = states.map((frame) => frame.map((v) => (v ? '1' : '0')).join('')).join('\n');
-	document.getElementById('output-text').value = text;
-	document.getElementById('output').hidden = false;
+	showOutput(
+		'Generated animation',
+		'One line per frame, one <code>0</code>/<code>1</code> per LED (order matches the layout\'s <code>leds</code> list).',
+		text
+	);
+}
+
+// round to 6 significant figures, matching create_matrix.py/create_hex_circle.py's
+// {:,g} formatting - mainly matters for a live-built Matrix, whose raw x/y come
+// straight out of 2*i/(n-1)-1 division with no such rounding applied yet
+function clean(v) {
+	return Math.abs(v) < 1e-6 ? 0 : Number(v.toPrecision(6));
+}
+
+function exportLayout() {
+	const data = { leds: leds.map((led) => ({ x: clean(led.posX), y: clean(led.posY), r: clean(led.size) })) };
+	if (symmetry.some((v, i) => v !== i)) data.symmetry = symmetry;
+	if (ledLines.length) data.lines = ledLines;
+	showOutput(
+		'Layout file',
+		'Save as <code>layouts/&lt;name&gt;.json</code> (see the <code>p5js/</code> README) to keep this layout.',
+		JSON.stringify(data)
+	);
 }
 
 // Toolbar buttons are real <button> elements now (see index.html) - keyboard hotkeys

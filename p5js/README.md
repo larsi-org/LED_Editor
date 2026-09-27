@@ -79,3 +79,6 @@ always ignores symmetry regardless of it.
 - `r` - flip a random LED (and its symmetric partner, if any)
 - `g` - open a text box with the whole animation (every frame, every LED, as
   `0`/`1`) and a "Copy to clipboard" button
+- `e` - open the same text box with the current layout's own `layouts/*.json`
+  contents instead - the only way to keep a layout built with **Matrix
+  (Custom)**, since those are never written to a file on their own
