@@ -10,6 +10,8 @@ const LAYOUTS = [
 	'led_3x3', 'led_4x4', 'led_5', 'led_5x5', 'led_6x5', 'led_8', 'led_8x8', 'led_16', 'led_16x16', 'led_20'
 ];
 
+const MATRIX_OPTION = '__matrix__'; // not a real layouts/*.json file - built live, see buildMatrixFromInputs()
+
 let directory = 'hex10';
 
 // colors
@@ -63,7 +65,12 @@ async function loadLayout(name) {
 	leds = []; // draw() bails out while this is empty, so the canvas just goes blank during the fetch
 
 	const data = await (await fetch(DATA_BASE + name + '.json')).json();
+	applyLayoutData(name, data);
+}
 
+// shared by loadLayout() (fetched layouts/*.json) and buildMatrixFromInputs()
+// (built in memory, never saved - same {leds, symmetry?, lines?} shape either way)
+function applyLayoutData(name, data) {
 	directory = name;
 	leds = data.leds.map((led, i) => new Checkbox(String(i + 1), led.x, led.y, led.r, false));
 	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
@@ -71,6 +78,26 @@ async function loadLayout(name) {
 	clipboard = leds.map(() => false);
 	states = [leds.map(() => false)];
 	current = 0;
+}
+
+// port of create_matrix.py's create_matrix() - see that script for the generator
+// that produces the preset led_* layouts committed under layouts/. This builds
+// the same shape live, in memory, for any size the user asks for.
+function buildMatrix(dimX, dimY) {
+	const matrixLeds = [];
+	for (let j = 0; j < dimY; j++) {
+		const y = dimY === 1 ? 0 : (2 * j) / (dimY - 1) - 1;
+		for (let i = 0; i < dimX; i++) {
+			const x = dimX === 1 ? 0 : (2 * i) / (dimX - 1) - 1;
+			matrixLeds.push({ x, y, r: 0.1 });
+		}
+	}
+	applyLayoutData(`matrix ${dimX}×${dimY}`, { leds: matrixLeds });
+}
+
+function buildMatrixFromInputs() {
+	const clampDim = (id) => Math.min(32, Math.max(1, parseInt(document.getElementById(id).value, 10) || 1));
+	buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'));
 }
 
 function drawLEDs(dx, dy, a, currentFrame, icon) {
@@ -248,6 +275,13 @@ function wireToolbar() {
 	document.getElementById('symmetry-toggle').addEventListener('change', (e) => {
 		symmetryEnabled = e.target.checked;
 	});
+
+	document.getElementById('matrix-build-btn').addEventListener('click', buildMatrixFromInputs);
+	['matrix-width', 'matrix-height'].forEach((id) => {
+		document.getElementById(id).addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') buildMatrixFromInputs();
+		});
+	});
 }
 
 function populateLayoutSelect() {
@@ -259,9 +293,19 @@ function populateLayoutSelect() {
 		if (name === directory) option.selected = true;
 		select.appendChild(option);
 	}
+
+	const matrixOption = document.createElement('option');
+	matrixOption.value = MATRIX_OPTION;
+	matrixOption.textContent = 'Matrix (Custom)';
+	select.appendChild(matrixOption);
+
 	select.addEventListener('change', () => {
 		document.getElementById('output').hidden = true;
-		loadLayout(select.value);
+		const isMatrix = select.value === MATRIX_OPTION;
+		document.getElementById('matrix-controls').hidden = !isMatrix;
+		document.getElementById('matrix-divider').hidden = !isMatrix;
+		if (isMatrix) buildMatrixFromInputs();
+		else loadLayout(select.value);
 	});
 }
 

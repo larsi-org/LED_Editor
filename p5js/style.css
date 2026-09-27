@@ -30,6 +30,13 @@ a {
 	gap: 6px;
 }
 
+/* the [hidden] attribute alone isn't enough once an author rule sets display -
+   author-origin CSS always beats the UA stylesheet's [hidden]{display:none},
+   regardless of specificity or source order, so it has to be restated here */
+#toolbar [hidden] {
+	display: none;
+}
+
 .tb-divider {
 	width: 1px;
 	align-self: stretch;
@@ -54,6 +61,12 @@ a {
 }
 
 #toolbar select {
+	font-size: 14px;
+	padding: 2px 6px;
+}
+
+#toolbar input[type="number"] {
+	width: 3.5em;
 	font-size: 14px;
 	padding: 2px 6px;
 }

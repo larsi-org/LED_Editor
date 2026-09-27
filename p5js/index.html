@@ -21,6 +21,15 @@
 			<select id="layout"></select>
 		</div>
 
+		<span class="tb-divider" id="matrix-divider" hidden></span>
+		<div class="tb-group" id="matrix-controls" hidden>
+			<label for="matrix-width">W</label>
+			<input type="number" id="matrix-width" min="1" max="32" value="8">
+			<label for="matrix-height">H</label>
+			<input type="number" id="matrix-height" min="1" max="32" value="8">
+			<button class="tb-btn" id="matrix-build-btn"><i class="fas fa-hammer"></i> Build</button>
+		</div>
+
 		<span class="tb-divider"></span>
 		<div class="tb-group">
 			<label class="tb-checkbox">
