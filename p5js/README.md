@@ -52,11 +52,12 @@ Hex N=3, Zigzag off - a static Charlieplexed hexagon, not a wired strip),
 builder then **Export Layout**, not hand-written - same as `cube3`, which
 has no live builder equivalent since it needs a `lines` list a flat shape
 doesn't.
-The `hex*` presets stay checked in too (`hex10` is real hardware -
-[Schneeflocke](https://larsi.org/make/Schneeflocke)) even though Hex
-(Custom) can now reproduce any of them live. The equivalent `circle*`
-preset files were removed once Circle (Custom) could reproduce them all
-live and none of them were tied to real hardware.
+Only two `hex*` presets stay checked in now: `hex10` (real hardware -
+[Schneeflocke](https://larsi.org/make/Schneeflocke)) and `hex3` (kept as a
+small example, since it's the size most likely to get poked at first). The
+rest (`hex4`-`hex9`, `hex11`-`hex13`) were removed once Hex (Custom) could
+reproduce any of them live, same reasoning that removed all the `circle*`
+presets - none of them were tied to real hardware either.
 
 ## Circle (Custom)
 

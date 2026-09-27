@@ -5,7 +5,7 @@ const DATA_BASE = 'layouts/';
 
 const LAYOUTS = [
 	'cube3',
-	'hex3', 'hex4', 'hex5', 'hex6', 'hex7', 'hex8', 'hex9', 'hex10', 'hex11', 'hex12', 'hex13',
+	'hex3', 'hex10',
 	// led_* files are all real hardware, kept checked in instead of rebuilt live each time
 	'led_6x5', 'led_7x7', 'led_hex3', 'led_5x1', 'led_8x1', 'led_20x1', 'led_25x25'
 ];
