@@ -80,15 +80,18 @@ function applyLayoutData(name, data) {
 	current = 0;
 }
 
-// port of create_matrix.py's create_matrix() - see that script for the generator
-// that produces the preset led_* layouts committed under layouts/. This builds
-// the same shape live, in memory, for any size the user asks for.
+// Unlike create_matrix.py (which spaces each axis independently across the full
+// [-1, 1] range, stretching a non-square grid), this uses one pitch for both axes
+// - m = the larger dimension, inc = 2/m - so LEDs are evenly spaced in both x and
+// y instead of squashed to fill a square regardless of the grid's aspect ratio.
 function buildMatrix(dimX, dimY) {
+	const m = Math.max(dimX, dimY);
+	const inc = 2 / m;
 	const matrixLeds = [];
 	for (let j = 0; j < dimY; j++) {
-		const y = dimY === 1 ? 0 : (2 * j) / (dimY - 1) - 1;
+		const y = (j - (dimY - 1) / 2) * inc;
 		for (let i = 0; i < dimX; i++) {
-			const x = dimX === 1 ? 0 : (2 * i) / (dimX - 1) - 1;
+			const x = (i - (dimX - 1) / 2) * inc;
 			matrixLeds.push({ x, y, r: 0.1 });
 		}
 	}
@@ -229,11 +232,11 @@ function generate() {
 	);
 }
 
-// round to 6 significant figures, matching create_matrix.py/create_hex_circle.py's
-// {:,g} formatting - mainly matters for a live-built Matrix, whose raw x/y come
-// straight out of 2*i/(n-1)-1 division with no such rounding applied yet
+// round to 3 decimal places (x/y/r never exceed ±1, so this is plenty of
+// precision) - mainly matters for a live-built Matrix, whose raw x/y come
+// straight out of division with no rounding applied until export time
 function clean(v) {
-	return Math.abs(v) < 1e-6 ? 0 : Number(v.toPrecision(6));
+	return Math.round(v * 1000) / 1000;
 }
 
 function exportLayout() {
