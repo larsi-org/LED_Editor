@@ -4,7 +4,6 @@
 const DATA_BASE = 'layouts/';
 
 const LAYOUTS = [
-	'circle3', 'circle4', 'circle5', 'circle6', 'circle7', 'circle8', 'circle9', 'circle10', 'circle11', 'circle12', 'circle13',
 	'cube3',
 	'hex3', 'hex4', 'hex5', 'hex6', 'hex7', 'hex8', 'hex9', 'hex10', 'hex11', 'hex12', 'hex13',
 	'led_6x5', 'led_7x7' // the only preset led_* grids left - real hardware (LED 6x5 Shield,

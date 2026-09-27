@@ -42,9 +42,11 @@ settings. Both were produced by the live builder (6x5: W=6, H=5, Zigzag off;
 7x7: W=7, H=7, Zigzag on - matching each project's actual wiring order -
 then **Export Layout**), not hand-written - same as `cube3`, which has no
 live builder equivalent since it needs a `lines` list a flat shape doesn't.
-The `circle*`/`hex*` presets stay checked in too (`hex10` is real hardware -
-[Schneeflocke](https://larsi.org/make/Schneeflocke)) even though Circle/Hex
-(Custom) can now reproduce any of them live.
+The `hex*` presets stay checked in too (`hex10` is real hardware -
+[Schneeflocke](https://larsi.org/make/Schneeflocke)) even though Hex
+(Custom) can now reproduce any of them live. The equivalent `circle*`
+preset files were removed once Circle (Custom) could reproduce them all
+live and none of them were tied to real hardware.
 
 ## Circle (Custom)
 
