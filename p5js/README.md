@@ -33,15 +33,25 @@ then open `http://localhost:8000/p5js/`.
 
 No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
-so there's nothing left to commit a file for most shapes. `led_6x5` and
-`led_7x7` are exceptions: real hardware (the
-[LED 6x5 Shield](https://larsi.org/make/led_6x5) and
-[LED Coffee Table](https://larsi.org/make/CoffeeTable)), kept as checked-in
-files so the layout doesn't depend on someone rebuilding it with the right
-settings. Both were produced by the live builder (6x5: W=6, H=5, Zigzag off;
-7x7: W=7, H=7, Zigzag on - matching each project's actual wiring order -
-then **Export Layout**), not hand-written - same as `cube3`, which has no
-live builder equivalent since it needs a `lines` list a flat shape doesn't.
+so there's nothing left to commit a file for most shapes. The `led_*` files
+are exceptions: real hardware, kept as checked-in files so each layout
+doesn't depend on someone rebuilding it with the right settings -
+[LED 6x5 Shield](https://larsi.org/make/led_6x5) (`led_6x5`: W=6, H=5,
+Zigzag off), [LED Coffee Table](https://larsi.org/make/CoffeeTable)
+(`led_7x7`: W=7, H=7, Zigzag on - matching each project's actual wiring
+order), and five older electronics boards (single strips, one hex, one
+square matrix) -
+[ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) (`led_hex3`:
+Hex N=3, Zigzag off - a static Charlieplexed hexagon, not a wired strip),
+[ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) and
+[ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) (`led_5x1`),
+[ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) (`led_8x1`),
+[ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/)
+(`led_20x1`), and [Peggy 2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/)
+(`led_25x25`: W=25, H=25, Zigzag off). All were produced by the live
+builder then **Export Layout**, not hand-written - same as `cube3`, which
+has no live builder equivalent since it needs a `lines` list a flat shape
+doesn't.
 The `hex*` presets stay checked in too (`hex10` is real hardware -
 [Schneeflocke](https://larsi.org/make/Schneeflocke)) even though Hex
 (Custom) can now reproduce any of them live. The equivalent `circle*`
@@ -68,8 +78,9 @@ default (every checked-in `hex*` layout was built this way).
 ## Matrix (Custom)
 
 Builds a rectangular grid live. Width and height each 1-32; **Zigzag**
-works the same way as Hex's, but off by default (every checked-in `led_*`
-grid predates Zigzag and was built without it).
+works the same way as Hex's, but off by default - most checked-in `led_*`
+grids were built without it, `led_7x7` (LED Coffee Table) being the one
+exception that needs it checked.
 
 Both axes share one pitch (the larger dimension sets it), so LEDs are
 evenly spaced even when width and height differ, rather than stretched to
