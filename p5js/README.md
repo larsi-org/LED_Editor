@@ -30,14 +30,40 @@ then open `http://localhost:8000/p5js/`.
 - `sketch.js` / `checkbox.js` - the app logic and the LED grid's canvas drawing
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
-- `create_matrix.py` - generates `layouts/led_*.json` for the rectangular
-  grid layouts (`led_5`, `led_8`, ..., `led_16x16`, `led_6x5`)
 - `create_hex_circle.py` - generates `layouts/hex*.json`/`layouts/circle*.json`
   for the hexagonal (`hex3`-`hex13`) and circular (`circle3`-`circle13`)
   layouts
 
-`cube3` has no generator - it was hand-authored, since it also needs a
-`lines` list (see below) that neither script produces.
+Rectangular grids don't have a generator script anymore - **Matrix
+(Custom)** in the Layout dropdown builds any size live (see below), so
+there's nothing left to commit a file for. `led_6x5` and `led_7x7` are the
+exceptions: real hardware (the [LED 6x5 Shield](https://larsi.org/make/led_6x5)
+and [LED Coffee Table](https://larsi.org/make/CoffeeTable)), kept as
+checked-in files so the layout doesn't depend on someone rebuilding it with
+the right settings. Both were produced by the same live builder (6x5:
+W=6, H=5, Zigzag off; 7x7: W=7, H=7, Zigzag on - matching each project's
+actual wiring order - then **Export Layout**), not hand-written - same as
+`cube3`, which also has no generator since it needs a `lines` list neither
+script produces.
+
+## Matrix (Custom)
+
+Builds a rectangular grid live, in memory - nothing is saved to a file
+unless you use **Export Layout** (`e`) to grab it yourself. Width and
+height each 1-32; **Zigzag** mirrors every other row so LED numbering
+snakes back and forth (row 0 left-to-right, row 1 right-to-left, ...)
+instead of always running left-to-right, matching how an LED strip is
+usually wired - continuing straight into the next row rather than a long
+return wire back to the start of each one. Off by default.
+
+Both axes share one pitch (the larger dimension sets it), so LEDs are
+evenly spaced even when width and height differ, rather than stretched to
+fill a square. Wire lines are drawn across every row and down every
+column. Symmetry is computed too: horizontal flip, vertical flip, and
+180° rotation always apply; a square additionally gets both diagonal
+flips and both 90° rotations (only then does swapping the two axes map
+the grid back onto itself); a 1-wide or 1-tall strip degenerates to just
+one reversal (first↔last, second↔second-to-last, ...).
 
 ## Layout file format
 
@@ -56,12 +82,14 @@ then open `http://localhost:8000/p5js/`.
   mirror-symmetry group": a left-click toggles LED `i`, then walks
   `j = symmetry[j]` until it loops back to `i`, setting each one to `i`'s new
   state - a cycle, not just a pair (hex/circle layouts have up to 6-way
-  rotational symmetry near the center). Omitted entirely when no LED has a
-  partner (every `led_*` grid layout, plus `cube3`).
-- `lines` - optional, only `cube3` has one. Each entry is a `[i0, i1]` pair
-  of 0-based LED indices to draw a connecting wire between. Needed there
-  because the cube isn't a flat convex shape, so the physical wiring can't be
-  inferred just from LED positions the way it can for a flat grid/hex/circle.
+  rotational symmetry near the center; a rectangular grid has up to 8-way,
+  see "Matrix (Custom)" below). Omitted entirely when no LED has a partner
+  (`cube3` only, among the checked-in layouts).
+- `lines` - optional. Each entry is a `[i0, i1]` pair of 0-based LED indices
+  to draw a connecting wire between. `cube3` needs it because the cube isn't
+  a flat convex shape, so the physical wiring can't be inferred just from
+  LED positions the way it can for a flat grid/hex/circle; a rectangular
+  grid's rows/columns get one each too (see "Matrix (Custom)" below).
 
 ## Controls
 
