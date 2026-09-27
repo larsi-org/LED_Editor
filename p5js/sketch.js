@@ -84,23 +84,31 @@ function applyLayoutData(name, data) {
 // [-1, 1] range, stretching a non-square grid), this uses one pitch for both axes
 // - m = the larger dimension, inc = 2/m - so LEDs are evenly spaced in both x and
 // y instead of squashed to fill a square regardless of the grid's aspect ratio.
-function buildMatrix(dimX, dimY) {
+//
+// zigzag mirrors alternate rows (create_matrix.py has this too, just hardcoded
+// off) so LED numbering snakes back and forth - row 0 left-to-right, row 1
+// right-to-left, row 2 left-to-right, etc. - matching how an LED strip is
+// actually wired: continuing straight into the next row instead of a long
+// return wire back to the start of each row.
+function buildMatrix(dimX, dimY, zigzag) {
 	const m = Math.max(dimX, dimY);
 	const inc = 2 / m;
 	const matrixLeds = [];
+	let direction = 1;
 	for (let j = 0; j < dimY; j++) {
 		const y = (j - (dimY - 1) / 2) * inc;
 		for (let i = 0; i < dimX; i++) {
-			const x = (i - (dimX - 1) / 2) * inc;
+			const x = direction * (i - (dimX - 1) / 2) * inc;
 			matrixLeds.push({ x, y, r: 0.1 });
 		}
+		if (zigzag) direction *= -1;
 	}
 	applyLayoutData(`matrix ${dimX}×${dimY}`, { leds: matrixLeds });
 }
 
 function buildMatrixFromInputs() {
 	const clampDim = (id) => Math.min(32, Math.max(1, parseInt(document.getElementById(id).value, 10) || 1));
-	buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'));
+	buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'), document.getElementById('matrix-zigzag').checked);
 }
 
 function drawLEDs(dx, dy, a, currentFrame, icon) {

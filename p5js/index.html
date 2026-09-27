@@ -27,6 +27,10 @@
 			<input type="number" id="matrix-width" min="1" max="32" value="8">
 			<label for="matrix-height">H</label>
 			<input type="number" id="matrix-height" min="1" max="32" value="8">
+			<label class="tb-checkbox" title="Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start">
+				<input type="checkbox" id="matrix-zigzag">
+				Zigzag
+			</label>
 			<button class="tb-btn" id="matrix-build-btn"><i class="fas fa-hammer"></i> Build</button>
 		</div>
 
