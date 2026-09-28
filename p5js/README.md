@@ -136,6 +136,20 @@ are a plain 5-LED row, just on different chips. make/'s own gallery tile
 for the editor links with no `?layout=` at all, since it's the tool's
 generic entry point, not tied to one project.)
 
+`?builder=<name>&count=<n>[&zigzag=<0|1>]` (or `&countX=`/`&countY=`
+instead of `count` for **Matrix**, which has two dimensions) is the other
+way in - builds that layout live at load time from these params instead of
+fetching a file, the same thing clicking that builder's own **Build**
+button does. `<name>` is `circle`/`hex`/`matrix`/`cube`/`triangle`. Lets a
+project page link to a specific size with no `layouts/*.json` needed for
+it at all - e.g. `?builder=hex&count=13&zigzag=0`. A missing param (or a
+whole missing `&zigzag=`) falls back to that builder's own toolbar
+default; an unrecognized `?builder=` value falls back to the plain default
+file load, same as an invalid `?layout=` already does. `?layout=` wins if
+both are somehow present - a real checked-in file (hand-edited, or one
+that's drifted from what its builder currently produces) stays the more
+authoritative source.
+
 No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
 so there's nothing left to commit a file for most shapes. The `led_*` files
