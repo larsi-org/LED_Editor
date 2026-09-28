@@ -107,11 +107,15 @@ link (see below).
   builder" below)
 - `dist/led-editor.min.js` - built from all of those (see "Building" below);
   `index.html` loads this, not the source files directly
-- `layouts/<name>.json` - one file per supported LED layout, fetched at
-  runtime by the **Layout** dropdown; see "Layout file format" below
+- `layouts/<name>.json` - one file per checked-in hand-edited layout the
+  **Layout** dropdown can't build live, fetched at runtime; see "Layout
+  file format" below. Empty as of 2026-09-28 (see `layouts/README.md`) -
+  every file that used to live here turned out to be redundant with a live
+  builder
 
-The landing layout defaults to `hex10`, but the URL can override it two
-ways. Both are handled entirely client-side (`sketch.js` reads
+The landing layout defaults to Hex (Custom) at `count=10, zigzag=true`
+(Schneeflocke's own settings), but the URL can override it two ways. Both
+are handled entirely client-side (`sketch.js` reads
 `location.search` itself), so either works the same whether the page is
 served by `python3 -m http.server` here or by `index.php` on larsi.org:
 
@@ -138,7 +142,7 @@ dropdown:
 | Page | link |
 | --- | --- |
 | [make/Schneeflocke](https://larsi.org/make/Schneeflocke/) | `?builder=hex&count=10&zigzag=1` |
-| [make/LedCube3](https://larsi.org/make/LedCube3/) | `?layout=cube3.json` |
+| [make/LedCube3](https://larsi.org/make/LedCube3/) | `?builder=cube&count=3` |
 | [make/led_6x5](https://larsi.org/make/led_6x5/) | `?builder=matrix&countX=6&countY=5&zigzag=0` |
 | [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `?builder=matrix&countX=7&countY=7&zigzag=1` |
 | [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `?builder=hex&count=3&zigzag=0` |
@@ -148,55 +152,54 @@ dropdown:
 | [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `?builder=matrix&countX=8&countY=1&zigzag=0` |
 | [electronics/ATmegaX8/Peggy2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/) | `?builder=matrix&countX=25&countY=25&zigzag=0` |
 
-As of 2026-09-28, nine of these switched from `?layout=` to `?builder=` -
-verified first (comparing every LED position, wire, and symmetry orbit,
-not just LED count) that each one's checked-in file was an *exact* match
-for its builder's live output before switching it, so this changed nothing
-about what any of these pages actually show. `make/LedCube3` is the one
-exception, kept on `?layout=cube3.json` deliberately: `cube3.json`'s LEDs
-use a hand-picked `r=0.15`, but Cube (Custom) uses `r=0.1` like its sibling
-builders (see "Cube (Custom)" below) - a real, permanent divergence, not
-something a URL param can paper over. This is exactly the "hand-edited,
-no builder can reproduce it" case `?layout=` exists for.
+As of 2026-09-28, all ten of these switched from `?layout=` to `?builder=`
+- verified first (comparing every LED position, wire, and symmetry orbit,
+not just LED count) that 8 of the 9 distinct checked-in files were an
+*exact* match for their builder's live output. `cube3.json` was the one
+that wasn't: its LEDs used a hand-picked `r=0.15`, while Cube (Custom)
+uses `r=0.1` like its sibling builders (see "Cube (Custom)" below).
+Rather than keep that one file around for a cosmetic radius difference,
+the live builder became the single source there too - every
+`layouts/*.json` file was deleted as a result (see `layouts/README.md`),
+not just unlinked, and the landing view with no URL params at all now
+defaults to Hex (Custom) at `count=10, zigzag=true` (the params that
+reproduced the old default `hex10.json` exactly) instead of fetching a
+file. `?layout=` and `LAYOUTS` (in `sketch.js`) both stay fully wired up
+and ready for whenever a genuinely hand-edited layout - one no builder can
+reproduce - needs one again; there just isn't one right now.
 
 (ATtinyX5/led5 and ATmegaX8/led5 intentionally build the same 5&times;1
-shape - both are a plain 5-LED row, just on different chips; `led_5x1.json`
-still exists as the checked-in reference file even though neither page
-links to it directly anymore. make/'s own gallery tile for the editor
-links with no params at all, since it's the tool's generic entry point,
-not tied to one project.)
+shape - both are a plain 5-LED row, just on different chips. make/'s own
+gallery tile for the editor links with no params at all, since it's the
+tool's generic entry point, not tied to one project.)
 
-No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
-**Matrix (Custom)** in the Layout dropdown build any size live (see below),
-so there's nothing left to commit a file for most shapes. The `led_*` files
-are exceptions: real hardware, kept as checked-in files so each layout
-doesn't depend on someone rebuilding it with the right settings. `led_`
-names a Matrix (Custom) build specifically - hex/circle real hardware
-(there's currently only one, see below) keeps the bare `hexN`/`circleN`
-name instead -
-[LED 6x5 Shield](https://larsi.org/make/led_6x5) (`led_6x5`: W=6, H=5,
-Zigzag off), [LED Coffee Table](https://larsi.org/make/CoffeeTable)
-(`led_7x7`: W=7, H=7, Zigzag on - matching each project's actual wiring
-order), and four older electronics boards (single strips, one square
-matrix) -
+No generator scripts anymore, and no checked-in layout files either -
+**Circle (Custom)**, **Hex (Custom)**, **Matrix (Custom)**, **Cube
+(Custom)**, and **Triangle (Custom)** in the Layout dropdown build any
+size live (see below). Every project page below that links to a Matrix
+(Custom) build (project pages named `led_*`, from when these were still
+checked-in files with that naming convention) -
+[LED 6x5 Shield](https://larsi.org/make/led_6x5)
+(`?builder=matrix&countX=6&countY=5&zigzag=0`), [LED Coffee
+Table](https://larsi.org/make/CoffeeTable)
+(`?builder=matrix&countX=7&countY=7&zigzag=1` - matching the project's
+actual wiring order), and four older electronics boards (single strips,
+one square matrix) -
 [ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) and
-[ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) (`led_5x1`),
-[ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) (`led_8x1`),
+[ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/)
+(`countX=5, countY=1`),
+[ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/)
+(`countX=8, countY=1`),
 [ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/)
-(`led_20x1`), and [Peggy 2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/)
-(`led_25x25`: W=25, H=25, Zigzag off). All were produced by the live
-builder then **Export Layout**, not hand-written - same as `cube3`, which
-has no live builder equivalent since it needs a `lines` list a flat shape
-doesn't.
-Only two `hex*` presets stay checked in now, and both are real hardware:
-`hex10` ([Schneeflocke](https://larsi.org/make/Schneeflocke), Zigzag on -
-a continuously wired strip) and `hex3`
-([ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/), Zigzag
-off - a static Charlieplexed board, not a wired strip, so unlike `hex10`
-its numbering doesn't need to snake row to row). The rest (`hex4`-`hex9`,
-`hex11`-`hex13`) were removed once Hex (Custom) could reproduce any of
-them live, same reasoning that removed all the `circle*` presets - none
-of those were tied to real hardware.
+(`countX=20, countY=1`), and
+[Peggy 2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/)
+(`countX=25, countY=25, zigzag=0`) - see the table above for each one's
+full link. Two Hex (Custom) settings are real hardware too:
+`count=10, zigzag=1` ([Schneeflocke](https://larsi.org/make/Schneeflocke) -
+a continuously wired strip) and `count=3, zigzag=0`
+([ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) - a static
+Charlieplexed board, not a wired strip, so its numbering doesn't need to
+snake row to row).
 
 ## Circle (Custom)
 
@@ -213,8 +216,9 @@ other row so LED numbering snakes back and forth (row 0 left-to-right, row
 1 right-to-left, ...) instead of always running left-to-right, matching
 how an LED strip is usually wired - continuing straight into the next row
 rather than a long return wire back to the start of each one. On by
-default - `hex10` (a wired strip) needs it, `hex3` (a static board, not a
-strip) is the one checked-in exception built with it off.
+default - Schneeflocke (`count=10, zigzag=1`, a wired strip) needs it,
+ATtinyX5/hex3 (`count=3, zigzag=0`, a static board, not a strip) is the
+one real-hardware exception built with it off.
 
 Draws wire lines along the lattice's 3 natural directions (rows, plus both
 60°/120° diagonals - a triangular grid's pitch is exactly what makes those
@@ -223,17 +227,15 @@ merged into the single longest line its full run supports rather than one
 line per tiny adjacent-pair segment - same idea as Matrix (Custom)'s row/
 column lines, generalized to an arbitrary angle by `collinearLines()`.
 Matches real coordinates rather than build order, so it's correct under
-Zigzag automatically, same principle Symmetry (below) already follows -
-neither checked-in `hex10`/`hex3` has these lines yet since they predate
-this (only live Hex (Custom) builds get them for now); re-export and
-re-save either if they should catch up.
+Zigzag automatically, same principle Symmetry (below) already follows.
 
 ## Matrix (Custom)
 
 Builds a rectangular grid live. Width and height each 1-32; **Zigzag**
-works the same way as Hex's, but off by default - most checked-in `led_*`
-grids were built without it, `led_7x7` (LED Coffee Table) being the one
-exception that needs it checked.
+works the same way as Hex's, but off by default - most real-hardware
+project pages link in with it off, CoffeeTable
+(`?builder=matrix&countX=7&countY=7&zigzag=1`, LED Coffee Table) being the
+one exception that needs it checked.
 
 Both axes share one pitch (the larger dimension sets it), so LEDs are
 evenly spaced even when width and height differ, rather than stretched to
@@ -242,16 +244,22 @@ fill a square. Wire lines are drawn across every row and down every column.
 ## Cube (Custom)
 
 Builds an N×N×N cube live: N levels stacked top to bottom, each level an
-N×N face drawn with the same cabinet-projection skew the checked-in
-`cube3` layout uses (see `cube3`'s own entry above) - N from 2 to 10.
-Unlike `cube3`'s hand-picked `0.2`/`0.8` skew/spacing, this solves for
-whatever spacing keeps a constant *gap fraction* between levels (each
-level's own depth spread is always exactly half its vertical step) so
-levels never visually overlap at any N, rather than reusing fixed numbers
-that would start overlapping past N≈5. Plugging N=3 into that formula
-reproduces `cube3.json` exactly. No Zigzag option (a cube's real wiring
-order is a whole separate problem - see "Symmetry, for the four builders"
-below for why this one skips symmetry too).
+N×N face drawn with a cabinet-projection skew - N from 2 to 10. The
+original design reverse-engineered this formula from a hand-picked N=3
+layout (`0.2`/`0.8` skew/spacing, since deleted along with every other
+checked-in `layouts/*.json` file - see the "Adding a new builder"/Layout
+sections above) rather than reusing those fixed numbers: it solves for
+whatever spacing keeps a constant *gap fraction* between levels instead
+(each level's own depth spread is always exactly half its vertical step),
+so levels never visually overlap at any N, unlike the fixed-ratio numbers
+that hand-picked N=3 layout used, which would have started overlapping
+past N≈5 if reused unchanged at larger N. Plugging N=3 into this formula
+reproduces that original layout's LED positions exactly (still true, just
+no longer checkable against a live file) - only its LED radius differs
+(`r=0.1` here, matching every other builder, vs that layout's own
+`r=0.15`). No Zigzag option (a cube's real wiring order is a whole
+separate problem - see "Symmetry, for the five builders" below for why
+this one skips symmetry too).
 
 Within a level, a farther-away row (see `buildCube`'s own comment on which
 end is "front") can visually overlap a nearer one, especially at higher N
@@ -291,8 +299,9 @@ doesn't: a physical cube's real symmetry group acts on its 3D level/row/
 column axes, but the cabinet projection treats those three axes
 asymmetrically (level is a pure y-shift, column a pure x-shift, row a
 diagonal x+y shift), so a real cube rotation doesn't correspond to any
-simple 2D transform of the projected (x, y) - same reason the checked-in
-`cube3.json` has no `symmetry` key either.
+simple 2D transform of the projected (x, y) - same reason the original
+hand-picked N=3 cube layout this builder's formula was reverse-engineered
+from (see "Cube (Custom)" above) never had a `symmetry` key either.
 
 - **Circle/Hex**: both are rings of points around a center, which always
   has the full 12-element dihedral group available (6 rotations, each
@@ -330,13 +339,14 @@ simple 2D transform of the projected (x, y) - same reason the checked-in
   `j = symmetry[j]` until it loops back to `i`, setting each one to `i`'s new
   state - a cycle, not just a pair (hex/circle layouts have up to 12-way
   symmetry near the center, a rectangular grid up to 8-way - see "Symmetry,
-  for all three builders" below). Omitted entirely when no LED has a
-  partner (`cube3` only, among the checked-in layouts).
+  for the five builders" above). Omitted entirely when no LED has a partner
+  (Cube (Custom) only, among the five live builders).
 - `lines` - optional. Each entry is a `[i0, i1]` pair of 0-based LED indices
-  to draw a connecting wire between. `cube3` needs it because the cube isn't
-  a flat convex shape, so the physical wiring can't be inferred just from
-  LED positions the way it can for a flat grid/hex/circle; a rectangular
-  grid's rows/columns get one each too (see "Matrix (Custom)" below).
+  to draw a connecting wire between. Cube (Custom) needs it because the
+  cube isn't a flat convex shape, so the physical wiring can't be inferred
+  just from LED positions the way it can for a flat grid/hex/circle; a
+  rectangular grid's rows/columns get one each too (see "Matrix (Custom)"
+  above).
 
 ## Pan & zoom
 
