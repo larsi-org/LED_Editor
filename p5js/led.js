@@ -1,39 +1,33 @@
 // Reads a CSS custom property from :root (led-editor.css) - the one shared color palette for
 // both this stylesheet's own rules and the p5 canvas, so a color only ever needs changing in
-// one place. Safe to call at plain top-level script scope (not just inside setup()): the
-// <link> to led-editor.css sits in <head>, loaded and parsed long before this bundle's
-// <script> (in $foot_extra, near the end of the page) ever runs, so the computed value is
-// already correct by the time any of this file's static fields evaluate. A plain `function`
-// declaration (not `const`), and therefore hoisted - callable from led.js's own static fields
-// even though this sits above them textually only by coincidence, not by requirement.
+// one place. Called fresh on every Led.backgroundColor()/textColor()/strokeColor() call
+// below rather than cached once - measured directly (performance.now(), 60 simulated frames)
+// rather than assumed: even the densest real layout (led_25x25, 625 LEDs) costs ~0.9ms/frame
+// this way, cube N=10 (1000 LEDs, the densest a live builder can produce) ~1.6ms/frame - both
+// comfortably under the 16.7ms budget a 60fps frame has to work with, so there's no need to
+// cache these across calls just to save a getComputedStyle() that isn't actually expensive
+// here (a page this static has no pending style/layout work forcing a real recalc on each
+// call - the cost that same lookup can have on a large, frequently-mutating page).
 function cssVar(name) {
 	return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 class Led {
-	// The six raw colors, read once from led-editor.css's :root palette - private, since no
-	// caller ever wants one of these on its own, only picked by lit/hovered state via the
-	// three static methods below.
-	static #backgroundOff = cssVar('--led-bg-off');
-	static #backgroundOn  = cssVar('--led-bg-on');
-	static #textOff       = cssVar('--led-text-off');
-	static #textOn        = cssVar('--led-text-on');
-	static #strokeNormal  = cssVar('--led-stroke-normal');
-	static #strokeHover   = cssVar('--led-stroke-hover');
-
 	// lit: this LED's current on/off state (draw()'s state/states[][] elsewhere in the app -
-	// "lit" reads more naturally for "which of these two colors" than "state" does).
+	// "lit" reads more naturally for "which of these two colors" than "state" does). Reads
+	// led-editor.css's custom properties fresh on every call rather than caching them once -
+	// see cssVar()'s own comment for why that's cheap enough here to not bother.
 	static backgroundColor(lit) {
-		return lit ? Led.#backgroundOn : Led.#backgroundOff;
+		return lit ? cssVar('--led-bg-on') : cssVar('--led-bg-off');
 	}
 
 	static textColor(lit) {
-		return lit ? Led.#textOn : Led.#textOff;
+		return lit ? cssVar('--led-text-on') : cssVar('--led-text-off');
 	}
 
 	// hovered: the mouse is currently over this LED (isOver() below).
 	static strokeColor(hovered) {
-		return hovered ? Led.#strokeHover : Led.#strokeNormal;
+		return hovered ? cssVar('--led-stroke-hover') : cssVar('--led-stroke-normal');
 	}
 
 	constructor(label, posX, posY, size) {
