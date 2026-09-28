@@ -224,10 +224,16 @@ directly - see the comment above `viewZoom`/`viewPanX`/`viewPanY` in
 `sketch.js` for why. Double-click/tap resets back to the default framing.
 Mostly useful for a dense **Cube (Custom)** or **Hex (Custom)** build (N=8
 cube is 512 LEDs, N=13 hex is 469) where LEDs overlap too much at the
-default zoom to click the one you mean. No pinch-zoom yet (see the same
-comment for what that would take) - a single-finger drag still pans on a
-touchscreen, since that comes for free from p5's default touch-to-mouse
-simulation.
+default zoom to click the one you mean. Zoom only spreads LEDs apart from
+each other - it deliberately does **not** also enlarge the circles
+themselves (`Checkbox.draw()`/`isOver()` take separate position and size
+scale factors, and `drawLEDs()` only zooms the position one). A uniform
+zoom would leave LEDs exactly as hard to tell apart as before, just
+bigger; more space *between* them is the actual fix. Content is clipped to
+the main view's own square border so zooming in doesn't spill past it into
+the thumbnail strip below. No pinch-zoom yet (see the same comment for
+what that would take) - a single-finger drag still pans on a touchscreen,
+since that comes for free from p5's default touch-to-mouse simulation.
 
 A distinct click (not a drag) still toggles whatever LED is under the
 cursor, at whatever the current pan/zoom happens to be - `mouseReleased()`
