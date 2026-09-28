@@ -45,6 +45,7 @@ const LEDS_DY = DIM2; // buttons/label used to live in a reserved band above thi
 // twice as wide as it needed to be, always overflowing the page)
 const THUMB_GAP = 20;
 const THUMB_TOP = DIM + THUMB_GAP;
+const THUMB_SIZE = 100; // one thumbnail's on-canvas footprint, width == height
 
 // LEDs
 let leds = [];
@@ -63,6 +64,14 @@ let current = 0;
 
 // clipboard
 let clipboard = [];
+
+// One rendered p5.Graphics image per frame, blitted with image() instead of redrawing every
+// LED from scratch (up to hundreds of ellipse() calls) for each of up to 64 thumbnails,
+// every single p5 frame - almost none of that ever changes, since every operation that edits
+// a frame's LEDs only ever touches states[current] (see invalidateCurrentThumb() and its call
+// sites). null = needs (re)rendering; renderThumb() fills it in lazily, only once a frame's
+// thumbnail is actually about to be drawn, not eagerly the moment it's invalidated.
+let thumbCache = [];
 
 // Interactive pan/zoom for the main LED view only (thumbnails always stay unzoomed - see
 // drawLEDs()'s default params). Same gesture math as lib/larsi.org/point-cloud-renderer-2d.js
@@ -100,9 +109,9 @@ function inMainView(x, y) {
 	return x >= 0 && x < DIM && y >= 0 && y < DIM;
 }
 
-// Same dx/dy/f/sf the main (non-icon) drawLEDs() call actually draws with, for hit-testing
-// at the current pan/zoom - mouseReleased() needs this to stay in sync with what's on
-// screen. sf (size) deliberately doesn't pick up viewZoom, matching drawLEDs()'s own sf -
+// Same dx/dy/f/sf drawLEDs() actually draws the main view with, for hit-testing at the
+// current pan/zoom - mouseReleased() needs this to stay in sync with what's on screen. sf
+// (size) deliberately doesn't pick up viewZoom, matching drawLEDs()'s own sf -
 // the hit target stays the same fixed size a zoomed-apart LED is actually drawn at, not a
 // zoomed-up one, so click precision improves right along with the added visual spacing.
 function mainViewProjection() {
@@ -111,7 +120,7 @@ function mainViewProjection() {
 }
 
 function setup() {
-	const canvas = createCanvas(DIM, THUMB_TOP + 100); // starts at 1 thumbnail row; grows with the frame count
+	const canvas = createCanvas(DIM, THUMB_TOP + THUMB_SIZE); // starts at 1 thumbnail row; grows with the frame count
 	canvas.parent('sketch-holder');
 	canvas.elt.oncontextmenu = () => false; // right-click toggles a single LED, don't show the browser menu
 	textAlign(CENTER, CENTER);
@@ -138,13 +147,14 @@ function applyLayoutData(name, data) {
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
 	states = [leds.map(() => false)];
+	thumbCache = []; // brand-new leds - every previous frame's cached image is for a completely different shape now
 	current = 0;
 	resetView(); // a stale zoom/pan from the previous layout wouldn't make sense on a new one
 }
 
-// viewZoom/viewPanX/viewPanY default to identity (1, 0, 0) for thumbnails, which always
-// show the whole layout unzoomed - only the main view (see draw()) passes the live values.
-function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, viewPanY = 0) {
+// Thumbnails no longer go through here at all (see renderThumb() below) - this is always the
+// main, interactive view now.
+function drawLEDs(dx, dy, a, currentFrame, viewZoom, viewPanX, viewPanY) {
 	a -= 1;
 	const f = Math.round(0.9 * a);
 
@@ -185,15 +195,10 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	const cf = f * viewZoom;
 	const sf = f;
 
-	// wires - thumbnails skip these (same reason they already skip labels/stroke in
-	// Checkbox.draw()'s icon mode): up to 64 of them redraw every frame, so a dense layout's
-	// wire count (cube N=8 has 192, hex N=13 has 75) adds up fast for something a few
-	// millimeters across and not worth reading at that size anyway.
-	if (!icon) {
-		stroke(STROKE_WIRE);
-		for (const [i0, i1] of ledLines) {
-			line(leds[i0].getPosX(cdx, cf), leds[i0].getPosY(cdy, cf), leds[i1].getPosX(cdx, cf), leds[i1].getPosY(cdy, cf));
-		}
+	// wires
+	stroke(STROKE_WIRE);
+	for (const [i0, i1] of ledLines) {
+		line(leds[i0].getPosX(cdx, cf), leds[i0].getPosY(cdy, cf), leds[i1].getPosX(cdx, cf), leds[i1].getPosY(cdy, cf));
 	}
 
 	// Reverse draw order (last LED first) so farther-away LEDs paint underneath nearer ones,
@@ -203,11 +208,59 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	// checked-in files) have no such depth axis, so draw order is a no-op for them either way.
 	for (let i = leds.length - 1; i >= 0; i--) {
 		leds[i].setState(states[currentFrame][i]);
-		if (icon) leds[i].draw(cdx, cdy, cf, sf);
-		else leds[i].draw(cdx, cdy, cf, sf, mouseX, mouseY);
+		leds[i].draw(cdx, cdy, cf, sf, mouseX, mouseY);
 	}
 
 	pop(); // otherwise the next drawLEDs() call stays clipped to this one's rect
+}
+
+// (Re)renders frame ti's thumbnail into its own small offscreen buffer, called lazily from
+// draw()'s thumbnail loop whenever thumbCache[ti] is missing - not eagerly the moment a frame
+// is invalidated, since an invalidated frame that's never actually visible before being
+// invalidated again (rapid edits to the current frame, say) would otherwise be rendered for
+// nothing. Local coordinates (the buffer is its own tiny canvas, not positioned within the
+// main one) - draw() places the result with image() instead. No wires (see the "not worth
+// reading at that size" note this replaced) and no stroke/label/hover, matching what
+// Checkbox.draw() used to skip in its old icon-mode branch - just plain filled circles, using
+// Checkbox's own position/size math directly rather than its draw() method.
+function renderThumb(ti) {
+	const g = createGraphics(THUMB_SIZE, THUMB_SIZE);
+	const c = THUMB_SIZE / 2;
+	const a = c - 1;
+	const f = Math.round(0.9 * a);
+
+	g.background(FILL_BACKGROUND);
+	g.stroke(STROKE_DIV);
+	g.fill(BACKGROUND);
+	g.rect(c - a, c - a, 2 * a, 2 * a);
+
+	g.noStroke();
+	for (let i = leds.length - 1; i >= 0; i--) {
+		g.fill(states[ti][i] ? Checkbox.BACKGROUND_ON : Checkbox.BACKGROUND_OFF);
+		const size = leds[i].getSize(f);
+		g.ellipse(leds[i].getPosX(c, f), leds[i].getPosY(c, f), size, size);
+	}
+
+	thumbCache[ti] = g;
+	return g;
+}
+
+function invalidateCurrentThumb() {
+	thumbCache[current] = null;
+}
+
+// executeKey()'s '['/']'/Delete cases need thumbCache kept in the exact same shape as
+// states - a frame that didn't change content still needs its cached image relocated to its
+// new index, and a newly-inserted blank frame starts with no cache at all (same as any other
+// invalidated frame - rendered lazily next time it's actually visible).
+function insertFrame(atIndex, frame) {
+	states.splice(atIndex, 0, frame);
+	thumbCache.splice(atIndex, 0, null);
+}
+
+function deleteFrame(atIndex) {
+	states.splice(atIndex, 1);
+	thumbCache.splice(atIndex, 1);
 }
 
 function draw() {
@@ -218,17 +271,21 @@ function draw() {
 	updateToolbarUI();
 	updateCanvasHeight();
 
-	// thumbnails, 8 wide, up to 8 rows - always unzoomed, independent of the main view
+	// thumbnails, 8 wide, up to 8 rows - cached per frame (see renderThumb()), only actually
+	// redrawn when that frame's own content changes, not every p5 frame
 	const rows = Math.min(8, Math.ceil(states.length / 8));
 	for (let ty = 0; ty < rows; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
 			const ti = tx + 8 * ty;
-			if (ti < states.length) drawLEDs(50 + tx * 100, THUMB_TOP + 50 + ty * 100, 50, ti, true);
+			if (ti < states.length) {
+				const g = thumbCache[ti] || renderThumb(ti);
+				image(g, tx * THUMB_SIZE, THUMB_TOP + ty * THUMB_SIZE);
+			}
 		}
 	}
 
 	// main LEDs
-	drawLEDs(LEDS_DX, LEDS_DY, LEDS_DX, current, false, viewZoom, viewPanX, viewPanY);
+	drawLEDs(LEDS_DX, LEDS_DY, LEDS_DX, current, viewZoom, viewPanX, viewPanY);
 }
 
 function toggleWithSymmetry(i) {
@@ -251,6 +308,7 @@ let symmetryEnabled = true;
 function toggleLED(i) {
 	if (symmetryEnabled) toggleWithSymmetry(i);
 	else states[current][i] = !states[current][i];
+	invalidateCurrentThumb();
 }
 
 function executeKey(key) {
@@ -259,9 +317,11 @@ function executeKey(key) {
 	switch (key) {
 		case ' ': // clear current frame
 			states[current] = states[current].map(() => false);
+			invalidateCurrentThumb();
 			break;
 		case 'i': // invert current frame
 			states[current] = states[current].map((v) => !v);
+			invalidateCurrentThumb();
 			break;
 		case ',': // previous frame
 			current = current > 0 ? current - 1 : states.length - 1;
@@ -270,16 +330,16 @@ function executeKey(key) {
 			current = current < states.length - 1 ? current + 1 : 0;
 			break;
 		case '[': // insert a frame before the current frame
-			states.splice(current, 0, leds.map(() => false));
+			insertFrame(current, leds.map(() => false));
 			break;
 		case ']': // insert a frame after the current frame
 			current++;
-			states.splice(current, 0, leds.map(() => false));
+			insertFrame(current, leds.map(() => false));
 			break;
 		case 'Delete':
 		case 'Backspace': // delete current frame
 			if (states.length > 1) { // keep at least one frame
-				states.splice(current, 1);
+				deleteFrame(current);
 				if (current > states.length - 1) current = states.length - 1;
 			}
 			break;
@@ -288,6 +348,7 @@ function executeKey(key) {
 			break;
 		case 'v': // paste clipboard into frame
 			states[current] = clipboard.slice();
+			invalidateCurrentThumb();
 			break;
 		case 'r': // random
 			toggleLED(Math.floor(Math.random() * leds.length));
@@ -404,7 +465,10 @@ function mouseReleased() {
 		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) states[current][i] = !states[current][i];
+			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) {
+				states[current][i] = !states[current][i];
+				invalidateCurrentThumb();
+			}
 		}
 	}
 }
@@ -422,7 +486,7 @@ function updateCanvasHeight() {
 	const rows = Math.min(8, Math.ceil(states.length / 8)); // states always has >=1 frame, so rows >= 1
 	if (rows === lastThumbRows) return;
 	lastThumbRows = rows;
-	resizeCanvas(DIM, THUMB_TOP + rows * 100);
+	resizeCanvas(DIM, THUMB_TOP + rows * THUMB_SIZE);
 }
 
 function wireToolbar() {

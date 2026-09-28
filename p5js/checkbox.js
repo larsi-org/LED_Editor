@@ -48,18 +48,16 @@ class Checkbox {
 		return x * x + y * y <= r * r;
 	}
 
-	// mx/my omitted => icon mode (thumbnails), full mode otherwise
+	// Thumbnails no longer render through here (see sketch.js's renderThumb(), which draws its
+	// own plain filled circles into a cached offscreen buffer instead) - this is always the
+	// main, interactive view now, so there's no more icon-mode branch to skip
+	// stroke/hover/label for.
 	draw(dx, dy, f, sf, mx, my) {
-		const icon = mx === undefined;
-
 		fill(this.state ? Checkbox.BACKGROUND_ON : Checkbox.BACKGROUND_OFF);
-		if (icon) noStroke();
-		else stroke(this.isOver(dx, dy, f, sf, mx, my) ? Checkbox.STROKE_HOVER : Checkbox.STROKE_NORMAL);
+		stroke(this.isOver(dx, dy, f, sf, mx, my) ? Checkbox.STROKE_HOVER : Checkbox.STROKE_NORMAL);
 		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), this.getSize(sf), this.getSize(sf));
 
-		if (!icon) {
-			fill(this.state ? Checkbox.TEXT_ON : Checkbox.TEXT_OFF);
-			text(this.label, this.getPosX(dx, f), this.getPosY(dy, f));
-		}
+		fill(this.state ? Checkbox.TEXT_ON : Checkbox.TEXT_OFF);
+		text(this.label, this.getPosX(dx, f), this.getPosY(dy, f));
 	}
 }
