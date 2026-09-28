@@ -1,0 +1,183 @@
+/* One shared stylesheet for the LED Editor UI - loaded by this repo's own index.html and by
+   larsi.org's make/led-editor/index.php (copied to lib/larsi.org/led-editor.css there - see
+   the repo README's "Building" section). Every project links to that one live page, so there's
+   no need for per-page color variants - a single :root palette here is the one place to
+   change a color, for both this stylesheet's own rules and the p5 canvas: led.js/sketch.js
+   read the custom properties below (bg-canvas, bg-canvas-fill, accent, wire, and the led-
+   prefixed ones) via getComputedStyle() at load time instead of hardcoding a color literal -
+   see led.js's own cssVar() comment. 3-digit hex shorthand (#369, not #336699) wherever a
+   color's two hex digits per channel happen to match - CSS expands it to the exact same
+   value, this is a readability preference, not an approximation. */
+:root {
+	/* page chrome */
+	--bg-page:             #1a1a1a;
+	--text-body:           #eee;
+	--link:                #6cf;
+	--bg-toolbar:          #1f1f1f;
+	--border-toolbar:      #2c3540;
+	--text-muted:          #9aa5b1;
+	--accent:              #369;
+	--bg-button:           #262626;
+	--bg-button-hover:     #2f3f4f;
+	--border-button-hover: #4a80ad;
+	--text-readout:        #ff8080;
+	--border-output:       #444;
+
+	/* shared with the p5 canvas (led.js/sketch.js read these too) */
+	--bg-canvas:           #111;
+	--bg-canvas-fill:      #333;
+	--wire:                #666;
+	--led-bg-off:          #600;
+	--led-bg-on:           #f33;
+	--led-text-off:        #fff;
+	--led-text-on:         #000;
+	--led-stroke-normal:   #000;
+	--led-stroke-hover:    #fff;
+}
+
+#led-editor {
+	background: var(--bg-page);
+	padding: 12px;
+	border-radius: 6px;
+}
+
+#toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	padding: 8px 10px;
+	background: var(--bg-toolbar);
+	border: 1px solid var(--border-toolbar);
+}
+
+.tb-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* the [hidden] attribute alone isn't enough once an author rule sets display -
+   author-origin CSS always beats the UA stylesheet's [hidden]{display:none},
+   regardless of specificity or source order, so it has to be restated here */
+#toolbar [hidden] {
+	display: none;
+}
+
+.tb-divider {
+	width: 1px;
+	align-self: stretch;
+	background: var(--border-toolbar);
+}
+
+#toolbar label {
+	font-size: 13px;
+	color: var(--text-muted);
+	margin: 0;
+}
+
+.tb-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.tb-checkbox input {
+	accent-color: var(--accent);
+	cursor: pointer;
+}
+
+#toolbar select {
+	font-size: 14px;
+	padding: 2px 6px;
+}
+
+/* builders/*.js generates its own controls' <input>s with no classes (shared across this
+   page and the LED_Editor repo's own bare index.html, neither of which loads Bootstrap) */
+#toolbar input[type="number"] {
+	width: 4.5em;
+	font-size: 14px;
+	padding: 2px 6px;
+	background: var(--bg-canvas);
+	color: var(--text-body);
+	border: 1px solid var(--border-output);
+	border-radius: 4px;
+}
+
+.tb-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--bg-button);
+	color: var(--text-body);
+	border: 1px solid var(--accent);
+	padding: 5px 10px;
+	font-size: 13px;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.tb-btn:hover {
+	background: var(--bg-button-hover);
+	border-color: var(--border-button-hover);
+}
+
+.tb-btn:focus-visible {
+	outline: 2px solid var(--link);
+	outline-offset: 1px;
+}
+
+.tb-btn:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.tb-btn:disabled:hover {
+	background: var(--bg-button);
+	border-color: var(--accent);
+}
+
+.tb-readout {
+	font-family: "SF Mono", "Courier New", monospace;
+	font-variant-numeric: tabular-nums;
+	font-size: 13px;
+	color: var(--text-readout);
+	background: var(--bg-canvas);
+	border: 1px solid var(--bg-canvas-fill);
+	padding: 4px 8px;
+	min-width: 4.5em;
+	text-align: center;
+}
+
+#sketch-holder canvas {
+	display: block;
+	max-width: 100%;
+	/* !important: p5 sets an inline height (its pixelDensity/retina handling) that a plain
+	   height:auto here can't override, which stretched the canvas into an oval when only
+	   max-width kicked in. p5 accounts for this CSS-vs-native size mismatch in mouseX/mouseY. */
+	height: auto !important;
+}
+
+#output {
+	margin-top: 16px;
+	max-width: 800px;
+}
+
+#output textarea {
+	width: 100%;
+	box-sizing: border-box;
+	font-family: monospace;
+	background: var(--bg-canvas);
+	color: var(--text-body);
+	border: 1px solid var(--border-output);
+}
+
+#output-buttons {
+	margin-top: 8px;
+}
+
+#output-buttons button {
+	margin-right: 8px;
+}

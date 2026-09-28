@@ -1,10 +1,22 @@
+// Reads a CSS custom property from :root (led-editor.css) - the one shared color palette for
+// both this stylesheet's own rules and the p5 canvas, so a color only ever needs changing in
+// one place. Safe to call at plain top-level script scope (not just inside setup()): the
+// <link> to led-editor.css sits in <head>, loaded and parsed long before this bundle's
+// <script> (in $foot_extra, near the end of the page) ever runs, so the computed value is
+// already correct by the time any of this file's static fields evaluate. A plain `function`
+// declaration (not `const`), and therefore hoisted - callable from led.js's own static fields
+// even though this sits above them textually only by coincidence, not by requirement.
+function cssVar(name) {
+	return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 class Led {
-	static BACKGROUND_OFF = '#660000';
-	static BACKGROUND_ON  = '#ff3333';
-	static TEXT_OFF       = '#ffffff';
-	static TEXT_ON        = '#000000';
-	static STROKE_NORMAL  = '#000000';
-	static STROKE_HOVER   = '#ffffff';
+	static BACKGROUND_OFF = cssVar('--led-bg-off');
+	static BACKGROUND_ON  = cssVar('--led-bg-on');
+	static TEXT_OFF       = cssVar('--led-text-off');
+	static TEXT_ON        = cssVar('--led-text-on');
+	static STROKE_NORMAL  = cssVar('--led-stroke-normal');
+	static STROKE_HOVER   = cssVar('--led-stroke-hover');
 
 	constructor(label, posX, posY, size) {
 		this.label = label;

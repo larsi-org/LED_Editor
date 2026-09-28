@@ -29,11 +29,13 @@ if (layoutParam && /^[\w-]+\.json$/.test(layoutParam)) {
 	directory = layoutParam.replace(/\.json$/, '');
 }
 
-// colors
-const BACKGROUND      = '#111111';
-const FILL_BACKGROUND = '#333333';
-const STROKE_DIV      = '#336699';
-const STROKE_WIRE     = '#666666';
+// colors - read from led-editor.css's :root palette (see led.js's cssVar() comment for why
+// this is safe at plain top-level script scope), not hardcoded, so there's one place to
+// change any of them
+const BACKGROUND      = cssVar('--bg-canvas');
+const FILL_BACKGROUND = cssVar('--bg-canvas-fill');
+const STROKE_DIV      = cssVar('--accent');
+const STROKE_WIRE     = cssVar('--wire');
 
 const DIM  = 800;
 const DIM2 = DIM / 2;
