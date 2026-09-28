@@ -3,11 +3,19 @@
 
 const DATA_BASE = 'layouts/';
 
+// led_* files are all real hardware, kept checked in instead of rebuilt live each time
 const LAYOUTS = [
-	'cube3',
-	'hex3', 'hex10',
-	// led_* files are all real hardware, kept checked in instead of rebuilt live each time
-	'led_6x5', 'led_7x7', 'led_5x1', 'led_8x1', 'led_20x1', 'led_25x25'
+	{ value: 'cube3',     label: 'Cube3 (LED Cube3)' },
+
+	{ value: 'hex3',      label: 'Hex3 (ATtinyX5 hex3)' },
+	{ value: 'hex10',     label: 'Hex10 (Schneeflocke)' },
+
+	{ value: 'led_6x5',   label: '6×5 (LED 6×5)' },
+	{ value: 'led_7x7',   label: '7×7 (LED Coffee Table)' },
+	{ value: 'led_5x1',   label: '5×1 (LED5)' },
+	{ value: 'led_8x1',   label: '8×1 (LED8)' },
+	{ value: 'led_20x1',  label: '20×1 (ATtinyX5 led20)' },
+	{ value: 'led_25x25', label: '25×25 (Peggy 2LE)' }
 ];
 
 // pseudo-layouts, not real layouts/*.json files - built live instead, see
@@ -542,11 +550,11 @@ function wireToolbar() {
 
 function populateLayoutSelect() {
 	const select = document.getElementById('layout');
-	for (const name of LAYOUTS) {
+	for (const { value, label } of LAYOUTS) {
 		const option = document.createElement('option');
-		option.value = name;
-		option.textContent = name;
-		if (name === directory) option.selected = true;
+		option.value = value;
+		option.textContent = label;
+		if (value === directory) option.selected = true;
 		select.appendChild(option);
 	}
 

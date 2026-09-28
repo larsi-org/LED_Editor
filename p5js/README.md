@@ -16,7 +16,10 @@ real ones - real `<button>`s get native hover/focus/keyboard handling for
 free, and don't need per-frame hit-testing against the mouse position.
 
 Must be served over HTTP, not opened directly as a `file://` URL (browsers
-block `fetch()` of local files). From the repo root:
+block `fetch()` of local files). `index.html` loads the built
+`dist/led-editor.min.js` (see "Building" below), not `sketch.js`/`checkbox.js`
+directly, so run `npm run build` after editing either before testing in the
+browser. From the repo root:
 
 ```bash
 python3 -m http.server
@@ -24,10 +27,29 @@ python3 -m http.server
 
 then open `http://localhost:8000/p5js/`.
 
+## Building
+
+```sh
+cd p5js
+npm install
+npm run build
+```
+
+Concatenates `checkbox.js` and `sketch.js` and minifies the result with
+[terser](https://github.com/terser/terser) into `dist/led-editor.min.js`. No
+UMD wrapper (unlike [d3-easygraph](https://github.com/larsi-org/d3-easygraph)) -
+this deliberately stays plain global-scope code, since p5.js's global mode
+finds `setup()`/`draw()`/`keyPressed()`/etc. as `window` properties, not
+through a module export. larsi.org's `make/led-editor/` copies
+`dist/led-editor.min.js` into its own `lib/larsi.org/` and loads that -
+rebuild and copy over after any `sketch.js`/`checkbox.js` change.
+
 ## Layout
 
 - `index.html` / `style.css` - the toolbar and page chrome
 - `sketch.js` / `checkbox.js` - the app logic and the LED grid's canvas drawing
+- `dist/led-editor.min.js` - built from those two (see "Building" below);
+  `index.html` loads this, not the source files directly
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
 
