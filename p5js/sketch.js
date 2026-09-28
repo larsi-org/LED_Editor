@@ -185,10 +185,15 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	const cf = f * viewZoom;
 	const sf = f;
 
-	// wires
-	stroke(STROKE_WIRE);
-	for (const [i0, i1] of ledLines) {
-		line(leds[i0].getPosX(cdx, cf), leds[i0].getPosY(cdy, cf), leds[i1].getPosX(cdx, cf), leds[i1].getPosY(cdy, cf));
+	// wires - thumbnails skip these (same reason they already skip labels/stroke in
+	// Checkbox.draw()'s icon mode): up to 64 of them redraw every frame, so a dense layout's
+	// wire count (cube N=8 has 192, hex N=13 has 75) adds up fast for something a few
+	// millimeters across and not worth reading at that size anyway.
+	if (!icon) {
+		stroke(STROKE_WIRE);
+		for (const [i0, i1] of ledLines) {
+			line(leds[i0].getPosX(cdx, cf), leds[i0].getPosY(cdy, cf), leds[i1].getPosX(cdx, cf), leds[i1].getPosY(cdy, cf));
+		}
 	}
 
 	// Reverse draw order (last LED first) so farther-away LEDs paint underneath nearer ones,
