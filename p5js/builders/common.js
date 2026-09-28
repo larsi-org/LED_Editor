@@ -130,13 +130,12 @@ function computeSymmetry(shapeLeds, transforms, tolerance) {
 }
 
 // Symmetry group of a hex/circle shape (shared by builders/circle.js and builders/hex.js,
-// unlike computeMatrixSymmetry/collinearLines which only one builder each needs so far -
-// see each of those files for why they stayed local instead of moving here too): both are
-// built as rings of 6, 12, 18, ... points around a center, which always has full 12-fold
-// dihedral symmetry (D6) - 6 rotations (multiples of 60°) plus a mirror, regardless of ring
-// count or zigzag. Rotation involves sin/cos, which aren't exact in floating point, so this
-// needs a looser tolerance (0.001, matching create_hex_circle.py's own f_equal) instead of
-// computeMatrixSymmetry's 1e-6.
+// unlike computeMatrixSymmetry, which only builders/matrix.js needs - see that file for why
+// it stayed local instead of moving here too): both are built as rings of 6, 12, 18, ...
+// points around a center, which always has full 12-fold dihedral symmetry (D6) - 6 rotations
+// (multiples of 60°) plus a mirror, regardless of ring count or zigzag. Rotation involves
+// sin/cos, which aren't exact in floating point, so this needs a looser tolerance (0.001,
+// matching create_hex_circle.py's own f_equal) instead of computeMatrixSymmetry's 1e-6.
 function computeRadialSymmetry(shapeLeds) {
 	const transforms = [];
 	for (let k = 0; k < 6; k++) {
@@ -148,4 +147,38 @@ function computeRadialSymmetry(shapeLeds) {
 		transforms.push((x, y) => [x * cosT + y * sinT, x * sinT - y * cosT]);
 	}
 	return computeSymmetry(shapeLeds, transforms, 0.001);
+}
+
+// Groups shapeLeds into the longest possible straight lines running in one direction
+// (angleDeg, degrees from horizontal) - the same "just the two endpoints, everything
+// between is already colinear" idea builders/matrix.js's row/column lines use, generalized
+// to an arbitrary angle instead of only 0°/90°. Points are bucketed by their position along
+// the axis *perpendicular* to that direction (rounded to a tolerance, since a rotated
+// coordinate isn't exact in floating point) - matching by real position rather than array
+// index/build order, so this is automatically correct regardless of zigzag, the same
+// principle computeSymmetry follows. A bucket of one point isn't a line (nothing to
+// connect). Shared by builders/hex.js and builders/triangle.js (both triangular-lattice
+// shapes with the same 0°/60°/120° natural line directions) - moved here once a second
+// builder actually needed it, not before (see computeMatrixSymmetry's own comment on that
+// same judgment call).
+function collinearLines(shapeLeds, angleDeg, tolerance = 1e-4) {
+	const theta = (angleDeg * Math.PI) / 180;
+	const dirX = Math.cos(theta), dirY = Math.sin(theta);
+	const perpX = -dirY, perpY = dirX;
+	const scale = 1 / tolerance;
+
+	const buckets = new Map();
+	shapeLeds.forEach((led, i) => {
+		const key = Math.round((led.x * perpX + led.y * perpY) * scale);
+		if (!buckets.has(key)) buckets.set(key, []);
+		buckets.get(key).push(i);
+	});
+
+	const lines = [];
+	for (const idxs of buckets.values()) {
+		if (idxs.length < 2) continue;
+		idxs.sort((a, b) => (shapeLeds[a].x * dirX + shapeLeds[a].y * dirY) - (shapeLeds[b].x * dirX + shapeLeds[b].y * dirY));
+		lines.push([idxs[0], idxs[idxs.length - 1]]);
+	}
+	return lines;
 }

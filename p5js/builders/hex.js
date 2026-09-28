@@ -1,36 +1,3 @@
-// Groups shapeLeds into the longest possible straight lines running in one direction
-// (angleDeg, degrees from horizontal) - the same "just the two endpoints, everything
-// between is already colinear" idea builders/matrix.js's row/column lines use, generalized
-// to an arbitrary angle instead of only 0°/90°. Points are bucketed by their position along
-// the axis *perpendicular* to that direction (rounded to a tolerance, since a rotated
-// coordinate isn't exact in floating point) - matching by real position rather than array
-// index/build order, so this is automatically correct regardless of zigzag, the same
-// principle computeSymmetry follows. A bucket of one point isn't a line (nothing to
-// connect). Only Hex needs this so far - see builders/matrix.js's computeMatrixSymmetry
-// comment for why a single-consumer helper like this one stays local instead of moving to
-// builders/common.js.
-function collinearLines(shapeLeds, angleDeg, tolerance = 1e-4) {
-	const theta = (angleDeg * Math.PI) / 180;
-	const dirX = Math.cos(theta), dirY = Math.sin(theta);
-	const perpX = -dirY, perpY = dirX;
-	const scale = 1 / tolerance;
-
-	const buckets = new Map();
-	shapeLeds.forEach((led, i) => {
-		const key = Math.round((led.x * perpX + led.y * perpY) * scale);
-		if (!buckets.has(key)) buckets.set(key, []);
-		buckets.get(key).push(i);
-	});
-
-	const lines = [];
-	for (const idxs of buckets.values()) {
-		if (idxs.length < 2) continue;
-		idxs.sort((a, b) => (shapeLeds[a].x * dirX + shapeLeds[a].y * dirY) - (shapeLeds[b].x * dirX + shapeLeds[b].y * dirY));
-		lines.push([idxs[0], idxs[idxs.length - 1]]);
-	}
-	return lines;
-}
-
 // port of create_hex_circle.py's create_hex() - a hexagon built as 2n-1
 // rows, widest in the middle. zigzag mirrors alternate rows, same idea and
 // same reason as Matrix's: the physical strip continues straight into the
