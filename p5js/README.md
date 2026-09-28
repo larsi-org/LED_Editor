@@ -140,15 +140,35 @@ Both axes share one pitch (the larger dimension sets it), so LEDs are
 evenly spaced even when width and height differ, rather than stretched to
 fill a square. Wire lines are drawn across every row and down every column.
 
-## Symmetry, for all three builders
+## Cube (Custom)
 
-None of the three save anything to a file on their own - use **Export
-Layout** (`e`) to grab one yourself. All three also compute `symmetry`
-(see "Layout file format" below) from the shape's actual geometry, not
-its row/column/ring index, so it's already correct under Hex/Matrix's
-Zigzag without needing to special-case it - the same principle
-`create_hex_circle.py` used to follow (matching real coordinates, not
-array position) before it was replaced by this.
+Builds an N×N×N cube live: N levels stacked top to bottom, each level an
+N×N face drawn with the same cabinet-projection skew the checked-in
+`cube3` layout uses (see `cube3`'s own entry above) - N from 2 to 10.
+Unlike `cube3`'s hand-picked `0.2`/`0.8` skew/spacing, this solves for
+whatever spacing keeps a constant *gap fraction* between levels (each
+level's own depth spread is always exactly half its vertical step) so
+levels never visually overlap at any N, rather than reusing fixed numbers
+that would start overlapping past N≈5. Plugging N=3 into that formula
+reproduces `cube3.json` exactly. No Zigzag option (a cube's real wiring
+order is a whole separate problem - see "Symmetry, for the four builders"
+below for why this one skips symmetry too).
+
+## Symmetry, for the four builders
+
+None of the four save anything to a file on their own - use **Export
+Layout** (`e`) to grab one yourself. Circle/Hex/Matrix all compute
+`symmetry` (see "Layout file format" below) from the shape's actual
+geometry, not its row/column/ring index, so it's already correct under
+Hex/Matrix's Zigzag without needing to special-case it - the same
+principle `create_hex_circle.py` used to follow (matching real
+coordinates, not array position) before it was replaced by this. Cube
+doesn't: a physical cube's real symmetry group acts on its 3D level/row/
+column axes, but the cabinet projection treats those three axes
+asymmetrically (level is a pure y-shift, column a pure x-shift, row a
+diagonal x+y shift), so a real cube rotation doesn't correspond to any
+simple 2D transform of the projected (x, y) - same reason the checked-in
+`cube3.json` has no `symmetry` key either.
 
 - **Circle/Hex**: both are rings of points around a center, which always
   has the full 12-element dihedral group available (6 rotations, each
