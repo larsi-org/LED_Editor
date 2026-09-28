@@ -129,6 +129,18 @@ rather than a long return wire back to the start of each one. On by
 default - `hex10` (a wired strip) needs it, `hex3` (a static board, not a
 strip) is the one checked-in exception built with it off.
 
+Draws wire lines along the lattice's 3 natural directions (rows, plus both
+60°/120° diagonals - a triangular grid's pitch is exactly what makes those
+two angles clean lines rather than some other, less obvious one), each
+merged into the single longest line its full run supports rather than one
+line per tiny adjacent-pair segment - same idea as Matrix (Custom)'s row/
+column lines, generalized to an arbitrary angle by `collinearLines()`.
+Matches real coordinates rather than build order, so it's correct under
+Zigzag automatically, same principle Symmetry (below) already follows -
+neither checked-in `hex10`/`hex3` has these lines yet since they predate
+this (only live Hex (Custom) builds get them for now); re-export and
+re-save either if they should catch up.
+
 ## Matrix (Custom)
 
 Builds a rectangular grid live. Width and height each 1-32; **Zigzag**
