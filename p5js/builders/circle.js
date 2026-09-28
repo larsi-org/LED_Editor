@@ -1,0 +1,39 @@
+// port of create_hex_circle.py's create_circle() - N rings (plus a center
+// LED) of 6, 12, 18, ... points, growing outward. No zigzag option: unlike a
+// row-by-row grid or hex, going around each ring in one direction is already
+// a sensible order to solder in - nothing to snake back and forth across.
+function buildCircle(n) {
+	const circleLeds = [{ x: 0, y: 0, r: 0.1 }];
+	for (let c = 1; c < n; c++) {
+		const r = c / (n - 1);
+		const fA = 60 / c;
+		for (let a = 0; a < 6 * c; a++) {
+			const angle = (fA * a * Math.PI) / 180;
+			circleLeds.push({ x: r * Math.cos(angle), y: -r * Math.sin(angle), r: 0.1 });
+		}
+	}
+	applyLayoutData(`circle ${n}`, { leds: circleLeds, symmetry: computeRadialSymmetry(circleLeds) });
+}
+
+registerBuilder({
+	id: '__circle__',
+	label: 'Circle (Custom)',
+
+	createControls() {
+		const divider = tbDivider('circle-divider');
+		const group = tbGroup('circle-controls');
+		const nInput = tbNumberInput('circle-n', { min: 3, max: 20, value: 10 });
+		const buildBtn = tbButton('circle-build-btn', { icon: 'fa-hammer', text: 'Build' });
+		group.append(tbLabel('circle-n', 'N'), nInput, buildBtn);
+
+		buildBtn.addEventListener('click', () => this.build());
+		nInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.build(); });
+
+		return { divider, group };
+	},
+
+	build() {
+		const n = Math.min(20, Math.max(3, parseInt(document.getElementById('circle-n').value, 10) || 3));
+		buildCircle(n);
+	}
+});

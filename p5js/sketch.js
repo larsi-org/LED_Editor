@@ -18,17 +18,6 @@ const LAYOUTS = [
 	{ value: 'led_25x25', label: '25×25 (Peggy 2LE)' }
 ];
 
-// pseudo-layouts, not real layouts/*.json files - built live instead, see
-// each build*FromInputs() function. Keyed by dropdown <option> value; each
-// entry names the toolbar group to show while it's selected and the
-// function that (re)builds it from that group's current inputs.
-const CUSTOM_BUILDERS = {
-	'__circle__': { label: 'Circle (Custom)', controls: 'circle-controls', divider: 'circle-divider', build: buildCircleFromInputs },
-	'__hex__': { label: 'Hex (Custom)', controls: 'hex-controls', divider: 'hex-divider', build: buildHexFromInputs },
-	'__matrix__': { label: 'Matrix (Custom)', controls: 'matrix-controls', divider: 'matrix-divider', build: buildMatrixFromInputs },
-	'__cube__': { label: 'Cube (Custom)', controls: 'cube-controls', divider: 'cube-divider', build: buildCubeFromInputs }
-};
-
 let directory = 'hex10';
 
 // ?layout=<name>.json overrides the default landing layout - e.g.
@@ -139,8 +128,9 @@ async function loadLayout(name) {
 	applyLayoutData(name, data);
 }
 
-// shared by loadLayout() (fetched layouts/*.json) and buildMatrixFromInputs()
-// (built in memory, never saved - same {leds, symmetry?, lines?} shape either way)
+// shared by loadLayout() (fetched layouts/*.json) and every builder's own build() in
+// builders/*.js (built in memory, never saved - same {leds, symmetry?, lines?} shape either
+// way)
 function applyLayoutData(name, data) {
 	directory = name;
 	leds = data.leds.map((led, i) => new Checkbox(String(i + 1), led.x, led.y, led.r, false));
@@ -150,329 +140,6 @@ function applyLayoutData(name, data) {
 	states = [leds.map(() => false)];
 	current = 0;
 	resetView(); // a stale zoom/pan from the previous layout wouldn't make sense on a new one
-}
-
-// Unlike create_matrix.py (which spaces each axis independently across the full
-// [-1, 1] range, stretching a non-square grid), this uses one pitch for both axes
-// - m = the larger dimension, inc = 2/m - so LEDs are evenly spaced in both x and
-// y instead of squashed to fill a square regardless of the grid's aspect ratio.
-//
-// zigzag mirrors alternate rows (create_matrix.py has this too, just hardcoded
-// off) so LED numbering snakes back and forth - row 0 left-to-right, row 1
-// right-to-left, row 2 left-to-right, etc. - matching how an LED strip is
-// actually wired: continuing straight into the next row instead of a long
-// return wire back to the start of each row.
-function buildMatrix(dimX, dimY, zigzag) {
-	const m = Math.max(dimX, dimY);
-	const inc = 2 / m;
-	const matrixLeds = [];
-	let direction = 1;
-	for (let j = 0; j < dimY; j++) {
-		const y = (j - (dimY - 1) / 2) * inc;
-		for (let i = 0; i < dimX; i++) {
-			const x = direction * (i - (dimX - 1) / 2) * inc;
-			matrixLeds.push({ x, y, r: 0.1 });
-		}
-		if (zigzag) direction *= -1;
-	}
-
-	// one line per row, left end to right end - a row's two ends are always at
-	// array indices j*dimX and j*dimX+dimX-1, regardless of zigzag (that only
-	// mirrors x position, not array order), and every LED in between is already
-	// colinear with them, so this alone draws straight across the whole row
-	const matrixLines = [];
-	if (dimX > 1) {
-		for (let j = 0; j < dimY; j++) {
-			matrixLines.push([j * dimX, j * dimX + dimX - 1]);
-		}
-	}
-	// one line per column, top to bottom. Unlike rows, zigzag mirrors each row
-	// independently, so a given physical column can sit at a different array
-	// index per row - group by actual rendered x instead of assuming index
-	// i, i+dimX, i+2*dimX, ... stays at the same column.
-	if (dimY > 1) {
-		const byX = new Map();
-		matrixLeds.forEach((led, i) => {
-			const key = Math.round(led.x * 1e6);
-			if (!byX.has(key)) byX.set(key, []);
-			byX.get(key).push(i);
-		});
-		for (const col of byX.values()) {
-			if (col.length < 2) continue;
-			col.sort((a, b) => matrixLeds[a].y - matrixLeds[b].y);
-			matrixLines.push([col[0], col[col.length - 1]]);
-		}
-	}
-
-	applyLayoutData(`matrix ${dimX}×${dimY}`, {
-		leds: matrixLeds,
-		lines: matrixLines,
-		symmetry: computeMatrixSymmetry(matrixLeds, dimX, dimY)
-	});
-}
-
-// Shared by every *Symmetry() below: given a layout's LEDs and a list of
-// candidate symmetry transforms ((x, y) -> [x, y]), find each LED's full
-// orbit by closing over all of them from its actual rendered position - the
-// LEDs that are all mutual mirror/rotation images of each other, wired into
-// one "next in cycle" cycle (see the layouts/*.json format in the README).
-// Working from real coordinates rather than row/column/ring index means this
-// is automatically correct under zigzag without special-casing it, the same
-// way hex/circle's own generator (create_hex_circle.py) always matched by
-// real (r, t) rather than array position. tolerance should match how far a
-// transform's floating-point result can drift from its true value - plain
-// sign flips are exact, but a rotation's sin/cos aren't, hence the two
-// different tolerances passed in below.
-function computeSymmetry(shapeLeds, transforms, tolerance) {
-	const n = shapeLeds.length;
-	const scale = 1 / tolerance;
-	const keyOf = (x, y) => `${Math.round(x * scale)},${Math.round(y * scale)}`;
-	const byPos = new Map();
-	shapeLeds.forEach((led, i) => byPos.set(keyOf(led.x, led.y), i));
-
-	const next = shapeLeds.map((_, i) => i); // default: no partner (self)
-	const assigned = new Array(n).fill(false);
-	for (let i = 0; i < n; i++) {
-		if (assigned[i]) continue;
-
-		const members = new Set([i]);
-		const stack = [i];
-		while (stack.length) {
-			const cur = stack.pop();
-			const { x, y } = shapeLeds[cur];
-			for (const t of transforms) {
-				const [tx, ty] = t(x, y);
-				const j = byPos.get(keyOf(tx, ty));
-				if (j !== undefined && !members.has(j)) {
-					members.add(j);
-					stack.push(j);
-				}
-			}
-		}
-
-		const orbit = Array.from(members).sort((a, b) => a - b);
-		orbit.forEach((idx) => { assigned[idx] = true; });
-		orbit.forEach((idx, k) => { next[idx] = orbit[(k + 1) % orbit.length]; });
-	}
-	return next;
-}
-
-// Symmetry group of an n x m grid: horizontal flip, vertical flip, and 180°
-// rotation always apply (a rectangle mirrors onto itself either way, and a
-// 1-wide/1-tall strip degenerates to just the one meaningful reversal, since
-// the other flip becomes a no-op). A square (dimX === dimY) additionally gets
-// both diagonal flips and both 90° rotations, since only then does swapping
-// the two axes map the grid back onto itself - "n x n has the most symmetry,
-// n x m loses half, 1 x n keeps only first<->last, second<->second-to-last".
-// These transforms are exact (pure sign flips/swaps), hence the tight 1e-6
-// tolerance.
-function computeMatrixSymmetry(matrixLeds, dimX, dimY) {
-	const transforms = [
-		(x, y) => [-x, y],
-		(x, y) => [x, -y],
-		(x, y) => [-x, -y]
-	];
-	if (dimX === dimY) {
-		transforms.push(
-			(x, y) => [-y, x],
-			(x, y) => [y, -x],
-			(x, y) => [y, x],
-			(x, y) => [-y, -x]
-		);
-	}
-	return computeSymmetry(matrixLeds, transforms, 1e-6);
-}
-
-// Symmetry group of a hex/circle shape: both are built as rings of 6, 12,
-// 18, ... points around a center, which always has full 12-fold dihedral
-// symmetry (D6) - 6 rotations (multiples of 60°) plus a mirror, regardless
-// of ring count or zigzag. Rotation involves sin/cos, which aren't exact in
-// floating point, so this needs a looser tolerance (0.001, matching
-// create_hex_circle.py's own f_equal) instead of computeMatrixSymmetry's 1e-6.
-function computeRadialSymmetry(shapeLeds) {
-	const transforms = [];
-	for (let k = 0; k < 6; k++) {
-		const theta = (k * 60 * Math.PI) / 180;
-		const cosT = Math.cos(theta);
-		const sinT = Math.sin(theta);
-		if (k > 0) transforms.push((x, y) => [x * cosT - y * sinT, x * sinT + y * cosT]);
-		// mirror across the x-axis (y -> -y), then that same rotation
-		transforms.push((x, y) => [x * cosT + y * sinT, x * sinT - y * cosT]);
-	}
-	return computeSymmetry(shapeLeds, transforms, 0.001);
-}
-
-function buildMatrixFromInputs() {
-	const clampDim = (id) => Math.min(32, Math.max(1, parseInt(document.getElementById(id).value, 10) || 1));
-	buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'), document.getElementById('matrix-zigzag').checked);
-}
-
-// port of create_hex_circle.py's create_circle() - N rings (plus a center
-// LED) of 6, 12, 18, ... points, growing outward. No zigzag option: unlike a
-// row-by-row grid or hex, going around each ring in one direction is already
-// a sensible order to solder in - nothing to snake back and forth across.
-function buildCircle(n) {
-	const circleLeds = [{ x: 0, y: 0, r: 0.1 }];
-	for (let c = 1; c < n; c++) {
-		const r = c / (n - 1);
-		const fA = 60 / c;
-		for (let a = 0; a < 6 * c; a++) {
-			const angle = (fA * a * Math.PI) / 180;
-			circleLeds.push({ x: r * Math.cos(angle), y: -r * Math.sin(angle), r: 0.1 });
-		}
-	}
-	applyLayoutData(`circle ${n}`, { leds: circleLeds, symmetry: computeRadialSymmetry(circleLeds) });
-}
-
-function buildCircleFromInputs() {
-	const n = Math.min(20, Math.max(3, parseInt(document.getElementById('circle-n').value, 10) || 3));
-	buildCircle(n);
-}
-
-// Groups shapeLeds into the longest possible straight lines running in one direction
-// (angleDeg, degrees from horizontal) - the same "just the two endpoints, everything
-// between is already colinear" idea buildMatrix's row/column lines use, generalized to an
-// arbitrary angle instead of only 0°/90°. Points are bucketed by their position along the
-// axis *perpendicular* to that direction (rounded to a tolerance, since a rotated
-// coordinate isn't exact in floating point) - matching by real position rather than
-// array index/build order, so this is automatically correct regardless of zigzag, the same
-// principle computeSymmetry follows. A bucket of one point isn't a line (nothing to connect).
-function collinearLines(shapeLeds, angleDeg, tolerance = 1e-4) {
-	const theta = (angleDeg * Math.PI) / 180;
-	const dirX = Math.cos(theta), dirY = Math.sin(theta);
-	const perpX = -dirY, perpY = dirX;
-	const scale = 1 / tolerance;
-
-	const buckets = new Map();
-	shapeLeds.forEach((led, i) => {
-		const key = Math.round((led.x * perpX + led.y * perpY) * scale);
-		if (!buckets.has(key)) buckets.set(key, []);
-		buckets.get(key).push(i);
-	});
-
-	const lines = [];
-	for (const idxs of buckets.values()) {
-		if (idxs.length < 2) continue;
-		idxs.sort((a, b) => (shapeLeds[a].x * dirX + shapeLeds[a].y * dirY) - (shapeLeds[b].x * dirX + shapeLeds[b].y * dirY));
-		lines.push([idxs[0], idxs[idxs.length - 1]]);
-	}
-	return lines;
-}
-
-// port of create_hex_circle.py's create_hex() - a hexagon built as 2n-1
-// rows, widest in the middle. zigzag mirrors alternate rows, same idea and
-// same reason as Matrix's: the physical strip continues straight into the
-// next row instead of a long return wire back to the start of each one.
-function buildHex(n, zigzag) {
-	const dx = 1 / (n - 1);
-	const dy = Math.sqrt(0.75) * dx;
-	const hexLeds = [];
-	let direction = 1;
-
-	function addRow(count, y) {
-		for (let i = 0; i < count; i++) {
-			const x = direction * dx * (i - (count - 1) / 2);
-			hexLeds.push({ x, y, r: 0.1 });
-		}
-	}
-
-	let count = n;
-	for (let row = 1; row < n; row++) {
-		addRow(count, dy * (row - n));
-		count += 1;
-		if (zigzag) direction *= -1;
-	}
-	count = 2 * n - 1;
-	addRow(count, 0);
-	count -= 1;
-	if (zigzag) direction *= -1;
-	for (let row = 1; row < n; row++) {
-		addRow(count, dy * row);
-		count -= 1;
-		if (zigzag) direction *= -1;
-	}
-
-	// A hex/triangular lattice has 3 natural line directions, 60° apart - horizontal rows
-	// (already implicit in how addRow() builds them) plus the two diagonals. dy's own
-	// sqrt(0.75) === sin(60°) is exactly what makes those two diagonals fall on clean 60°/
-	// 120° lines rather than some other angle - not a coincidence, the equilateral-triangle
-	// pitch is what a hex lattice *is*.
-	const hexLines = [0, 60, 120].flatMap((angle) => collinearLines(hexLeds, angle));
-
-	applyLayoutData(`hex ${n}`, { leds: hexLeds, lines: hexLines, symmetry: computeRadialSymmetry(hexLeds) });
-}
-
-function buildHexFromInputs() {
-	const n = Math.min(20, Math.max(3, parseInt(document.getElementById('hex-n').value, 10) || 3));
-	buildHex(n, document.getElementById('hex-zigzag').checked);
-}
-
-// Generalizes the checked-in cube3.json's hand-picked N=3 cabinet projection (see the
-// CLAUDE.md/README notes on it) to any N x N x N cube: N levels stacked top to bottom,
-// each level an N x N face, each row within a level skewed diagonally by (dx, dy) = (D, D)
-// to suggest depth - same idea cube3 used, just not hand-tweaked to round numbers anymore.
-//
-// cube3 picked colSpacing = levelStep = 0.8 and depthSkew = 0.2 - a 4:1 ratio - which for
-// N=3 happens to leave exactly half of each level's vertical step (0.8) as clear gap above
-// the next level's rows (depth spread = 0.2*(3-1) = 0.4 = 0.8/2). That's the part worth
-// keeping exact, not the raw numbers: fixing the *ratio* at 4:1 would let levels start
-// visually overlapping once N-1 >= 5 (N >= 6), since the within-level depth spread grows
-// with N while the level step doesn't. Instead this fixes the gap fraction itself - depth
-// spread is always exactly half the level step, at any N - by solving colSpacing ===
-// levelStep === P and depthSkew === D = P / (2*(N-1)) for whatever P makes the whole shape
-// span [-1, 1] on both axes: P = 4 / (2N - 1). Plugging in N=3 reproduces cube3.json's
-// 0.8/0.2 exactly, so this is a true generalization, not a different look.
-function buildCube(n) {
-	const P = 4 / (2 * n - 1);
-	const D = n > 1 ? P / (2 * (n - 1)) : 0;
-	const idx = (level, row, col) => (level * n + row) * n + col;
-
-	const cubeLeds = [];
-	for (let level = 0; level < n; level++) {
-		const topY = 1 - level * P;
-		for (let row = 0; row < n; row++) {
-			const y = topY - row * D;
-			for (let col = 0; col < n; col++) {
-				cubeLeds.push({ x: -1 + col * P + row * D, y, r: 0.1 });
-			}
-		}
-	}
-
-	// same "just the two endpoints" trick as buildMatrix's row/column lines - every LED
-	// between them is already colinear. One set per axis: left-right within a level's row,
-	// front-to-back within a level's column, and top-to-bottom through a row/column's full
-	// stack of levels (matches cube3.json's own 9+9+9 grouping, generalized to n*n each).
-	const cubeLines = [];
-	if (n > 1) {
-		for (let level = 0; level < n; level++) {
-			for (let row = 0; row < n; row++) {
-				cubeLines.push([idx(level, row, 0), idx(level, row, n - 1)]);
-			}
-		}
-		for (let level = 0; level < n; level++) {
-			for (let col = 0; col < n; col++) {
-				cubeLines.push([idx(level, 0, col), idx(level, n - 1, col)]);
-			}
-		}
-		for (let row = 0; row < n; row++) {
-			for (let col = 0; col < n; col++) {
-				cubeLines.push([idx(0, row, col), idx(n - 1, row, col)]);
-			}
-		}
-	}
-
-	// No symmetry computed - same as the checked-in cube3.json (no "symmetry" key at all).
-	// The cube's real symmetry group acts on its 3D level/row/col axes, but this cabinet
-	// projection treats those three axes asymmetrically (level is a pure y-shift, column a
-	// pure x-shift, row a diagonal x+y shift), so a physical cube rotation doesn't correspond
-	// to any simple 2D transform of the projected (x, y) the way computeMatrixSymmetry's
-	// axis flips do for a flat grid - not worth faking.
-	applyLayoutData(`cube ${n}`, { leds: cubeLeds, lines: cubeLines });
-}
-
-function buildCubeFromInputs() {
-	const n = Math.min(10, Math.max(2, parseInt(document.getElementById('cube-n').value, 10) || 2));
-	buildCube(n);
 }
 
 // viewZoom/viewPanX/viewPanY default to identity (1, 0, 0) for thumbnails, which always
@@ -760,32 +427,21 @@ function wireToolbar() {
 	document.getElementById('symmetry-toggle').addEventListener('change', (e) => {
 		symmetryEnabled = e.target.checked;
 	});
-
-	document.getElementById('circle-build-btn').addEventListener('click', buildCircleFromInputs);
-	document.getElementById('circle-n').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') buildCircleFromInputs();
-	});
-
-	document.getElementById('hex-build-btn').addEventListener('click', buildHexFromInputs);
-	document.getElementById('hex-n').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') buildHexFromInputs();
-	});
-
-	document.getElementById('matrix-build-btn').addEventListener('click', buildMatrixFromInputs);
-	['matrix-width', 'matrix-height'].forEach((id) => {
-		document.getElementById(id).addEventListener('keydown', (e) => {
-			if (e.key === 'Enter') buildMatrixFromInputs();
-		});
-	});
-
-	document.getElementById('cube-build-btn').addEventListener('click', buildCubeFromInputs);
-	document.getElementById('cube-n').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') buildCubeFromInputs();
-	});
+	// each builder in BUILDERS (builders/*.js) wires its own controls' Build button and
+	// Enter-key handling itself, inside its own createControls() - see populateLayoutSelect()
 }
 
+// Builder controls (builders/*.js) are created here, not written into index.html/index.php,
+// specifically so adding a new builder never means touching either page's markup - see
+// builders/common.js's own comment on the {id, label, createControls, build} interface this
+// relies on. Each one's <span class="tb-divider">/<div class="tb-group"> pair is inserted
+// right before #builders-anchor (a fixed, empty marker element already in the toolbar, ahead
+// of the always-present Symmetry group), in BUILDERS order - i.e. the order their <script>
+// tags load in, which package.json's build script controls.
 function populateLayoutSelect() {
 	const select = document.getElementById('layout');
+	const anchor = document.getElementById('builders-anchor');
+
 	for (const { value, label } of LAYOUTS) {
 		const option = document.createElement('option');
 		option.value = value;
@@ -794,24 +450,31 @@ function populateLayoutSelect() {
 		select.appendChild(option);
 	}
 
-	for (const [value, { label }] of Object.entries(CUSTOM_BUILDERS)) {
+	for (const builder of BUILDERS) {
 		const option = document.createElement('option');
-		option.value = value;
-		option.textContent = label;
+		option.value = builder.id;
+		option.textContent = builder.label;
 		select.appendChild(option);
+
+		const { divider, group } = builder.createControls();
+		divider.hidden = true;
+		group.hidden = true;
+		anchor.before(divider, group);
+		builder._divider = divider;
+		builder._group = group;
 	}
 
 	select.addEventListener('change', () => {
 		document.getElementById('output').hidden = true;
-		for (const { controls, divider } of Object.values(CUSTOM_BUILDERS)) {
-			document.getElementById(controls).hidden = true;
-			document.getElementById(divider).hidden = true;
+		for (const b of BUILDERS) {
+			b._divider.hidden = true;
+			b._group.hidden = true;
 		}
-		const custom = CUSTOM_BUILDERS[select.value];
-		if (custom) {
-			document.getElementById(custom.controls).hidden = false;
-			document.getElementById(custom.divider).hidden = false;
-			custom.build();
+		const builder = BUILDERS.find((b) => b.id === select.value);
+		if (builder) {
+			builder._divider.hidden = false;
+			builder._group.hidden = false;
+			builder.build();
 		} else {
 			loadLayout(select.value);
 		}
