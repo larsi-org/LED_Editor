@@ -110,45 +110,61 @@ link (see below).
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
 
-The landing layout defaults to `hex10`, but `?layout=<name>.json` in the
-URL overrides it - e.g. `?layout=led_7x7.json` opens straight on the LED
-Coffee Table's layout. Handled entirely client-side (`sketch.js` reads
-`location.search` itself), so it works the same whether the page is served
-by `python3 -m http.server` here or by `index.php` on larsi.org. Every
-larsi.org page for a real piece of hardware links in with its own layout
-this way instead of leaving the visitor to pick it from the dropdown:
+The landing layout defaults to `hex10`, but the URL can override it two
+ways. Both are handled entirely client-side (`sketch.js` reads
+`location.search` itself), so either works the same whether the page is
+served by `python3 -m http.server` here or by `index.php` on larsi.org:
 
-| Page | `?layout=` |
+- `?layout=<name>.json` - a real checked-in file, e.g.
+  `?layout=led_7x7.json`. Still the only way to land on a hand-edited
+  layout with no live builder able to reproduce it, or one that's drifted
+  from what its builder would currently produce - real files stay
+  authoritative, so this wins if both params are somehow present.
+- `?builder=<name>&count=<n>[&zigzag=<0|1>]` (or `&countX=`/`&countY=`
+  instead of `count` for **Matrix**, which has two dimensions) - builds
+  that layout live at load time from these params instead of fetching a
+  file, the same thing clicking that builder's own **Build** button does.
+  `<name>` is `circle`/`hex`/`matrix`/`cube`/`triangle`. Lets a project
+  page link to a specific size with no `layouts/*.json` needed for it at
+  all - e.g. `?builder=hex&count=13&zigzag=0`. A missing param (or a whole
+  missing `&zigzag=`) falls back to that builder's own toolbar default; an
+  unrecognized `?builder=` value falls back to the plain default file
+  load, same as an invalid `?layout=` already does.
+
+Every larsi.org page for a real piece of hardware links in with its own
+layout this way instead of leaving the visitor to pick it from the
+dropdown:
+
+| Page | link |
 | --- | --- |
-| [make/Schneeflocke](https://larsi.org/make/Schneeflocke/) | `hex10.json` |
-| [make/LedCube3](https://larsi.org/make/LedCube3/) | `cube3.json` |
-| [make/led_6x5](https://larsi.org/make/led_6x5/) | `led_6x5.json` |
-| [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `led_7x7.json` |
-| [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `hex3.json` |
-| [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `led_5x1.json` |
-| [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `led_20x1.json` |
-| [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `led_5x1.json` |
-| [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `led_8x1.json` |
-| [electronics/ATmegaX8/Peggy2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/) | `led_25x25.json` |
+| [make/Schneeflocke](https://larsi.org/make/Schneeflocke/) | `?builder=hex&count=10&zigzag=1` |
+| [make/LedCube3](https://larsi.org/make/LedCube3/) | `?layout=cube3.json` |
+| [make/led_6x5](https://larsi.org/make/led_6x5/) | `?builder=matrix&countX=6&countY=5&zigzag=0` |
+| [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `?builder=matrix&countX=7&countY=7&zigzag=1` |
+| [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `?builder=hex&count=3&zigzag=0` |
+| [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `?builder=matrix&countX=5&countY=1&zigzag=0` |
+| [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `?builder=matrix&countX=20&countY=1&zigzag=0` |
+| [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `?builder=matrix&countX=5&countY=1&zigzag=0` |
+| [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `?builder=matrix&countX=8&countY=1&zigzag=0` |
+| [electronics/ATmegaX8/Peggy2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/) | `?builder=matrix&countX=25&countY=25&zigzag=0` |
 
-(ATtinyX5/led5 and ATmegaX8/led5 intentionally share `led_5x1.json` - both
-are a plain 5-LED row, just on different chips. make/'s own gallery tile
-for the editor links with no `?layout=` at all, since it's the tool's
-generic entry point, not tied to one project.)
+As of 2026-09-28, nine of these switched from `?layout=` to `?builder=` -
+verified first (comparing every LED position, wire, and symmetry orbit,
+not just LED count) that each one's checked-in file was an *exact* match
+for its builder's live output before switching it, so this changed nothing
+about what any of these pages actually show. `make/LedCube3` is the one
+exception, kept on `?layout=cube3.json` deliberately: `cube3.json`'s LEDs
+use a hand-picked `r=0.15`, but Cube (Custom) uses `r=0.1` like its sibling
+builders (see "Cube (Custom)" below) - a real, permanent divergence, not
+something a URL param can paper over. This is exactly the "hand-edited,
+no builder can reproduce it" case `?layout=` exists for.
 
-`?builder=<name>&count=<n>[&zigzag=<0|1>]` (or `&countX=`/`&countY=`
-instead of `count` for **Matrix**, which has two dimensions) is the other
-way in - builds that layout live at load time from these params instead of
-fetching a file, the same thing clicking that builder's own **Build**
-button does. `<name>` is `circle`/`hex`/`matrix`/`cube`/`triangle`. Lets a
-project page link to a specific size with no `layouts/*.json` needed for
-it at all - e.g. `?builder=hex&count=13&zigzag=0`. A missing param (or a
-whole missing `&zigzag=`) falls back to that builder's own toolbar
-default; an unrecognized `?builder=` value falls back to the plain default
-file load, same as an invalid `?layout=` already does. `?layout=` wins if
-both are somehow present - a real checked-in file (hand-edited, or one
-that's drifted from what its builder currently produces) stays the more
-authoritative source.
+(ATtinyX5/led5 and ATmegaX8/led5 intentionally build the same 5&times;1
+shape - both are a plain 5-LED row, just on different chips; `led_5x1.json`
+still exists as the checked-in reference file even though neither page
+links to it directly anymore. make/'s own gallery tile for the editor
+links with no params at all, since it's the tool's generic entry point,
+not tied to one project.)
 
 No generator scripts anymore - **Circle (Custom)**, **Hex (Custom)**, and
 **Matrix (Custom)** in the Layout dropdown build any size live (see below),
