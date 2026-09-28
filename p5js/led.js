@@ -11,12 +11,30 @@ function cssVar(name) {
 }
 
 class Led {
-	static BACKGROUND_OFF = cssVar('--led-bg-off');
-	static BACKGROUND_ON  = cssVar('--led-bg-on');
-	static TEXT_OFF       = cssVar('--led-text-off');
-	static TEXT_ON        = cssVar('--led-text-on');
-	static STROKE_NORMAL  = cssVar('--led-stroke-normal');
-	static STROKE_HOVER   = cssVar('--led-stroke-hover');
+	// The six raw colors, read once from led-editor.css's :root palette - private, since no
+	// caller ever wants one of these on its own, only picked by lit/hovered state via the
+	// three static methods below.
+	static #backgroundOff = cssVar('--led-bg-off');
+	static #backgroundOn  = cssVar('--led-bg-on');
+	static #textOff       = cssVar('--led-text-off');
+	static #textOn        = cssVar('--led-text-on');
+	static #strokeNormal  = cssVar('--led-stroke-normal');
+	static #strokeHover   = cssVar('--led-stroke-hover');
+
+	// lit: this LED's current on/off state (draw()'s state/states[][] elsewhere in the app -
+	// "lit" reads more naturally for "which of these two colors" than "state" does).
+	static backgroundColor(lit) {
+		return lit ? Led.#backgroundOn : Led.#backgroundOff;
+	}
+
+	static textColor(lit) {
+		return lit ? Led.#textOn : Led.#textOff;
+	}
+
+	// hovered: the mouse is currently over this LED (isOver() below).
+	static strokeColor(hovered) {
+		return hovered ? Led.#strokeHover : Led.#strokeNormal;
+	}
 
 	constructor(label, posX, posY, size) {
 		this.label = label;
@@ -60,11 +78,11 @@ class Led {
 	// the main, interactive view now, so there's no more icon-mode branch to skip
 	// stroke/hover/label for.
 	draw(state, dx, dy, f, sf, mx, my) {
-		fill(state ? Led.BACKGROUND_ON : Led.BACKGROUND_OFF);
-		stroke(this.isOver(dx, dy, f, sf, mx, my) ? Led.STROKE_HOVER : Led.STROKE_NORMAL);
+		fill(Led.backgroundColor(state));
+		stroke(Led.strokeColor(this.isOver(dx, dy, f, sf, mx, my)));
 		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), this.getSize(sf), this.getSize(sf));
 
-		fill(state ? Led.TEXT_ON : Led.TEXT_OFF);
+		fill(Led.textColor(state));
 		text(this.label, this.getPosX(dx, f), this.getPosY(dy, f));
 	}
 }

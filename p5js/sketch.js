@@ -237,7 +237,7 @@ function renderThumb(ti) {
 
 	g.noStroke();
 	for (let i = leds.length - 1; i >= 0; i--) {
-		g.fill(states[ti][i] ? Led.BACKGROUND_ON : Led.BACKGROUND_OFF);
+		g.fill(Led.backgroundColor(states[ti][i]));
 		const size = leds[i].getSize(f);
 		g.ellipse(leds[i].getPosX(c, f), leds[i].getPosY(c, f), size, size);
 	}
