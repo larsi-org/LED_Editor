@@ -35,20 +35,66 @@ npm install
 npm run build
 ```
 
-Concatenates `checkbox.js` and `sketch.js` and minifies the result with
-[terser](https://github.com/terser/terser) into `dist/led-editor.min.js`. No
-UMD wrapper (unlike [d3-easygraph](https://github.com/larsi-org/d3-easygraph)) -
-this deliberately stays plain global-scope code, since p5.js's global mode
-finds `setup()`/`draw()`/`keyPressed()`/etc. as `window` properties, not
-through a module export. larsi.org's `make/led-editor/` copies
-`dist/led-editor.min.js` into its own `lib/larsi.org/` and loads that -
-rebuild and copy over after any `sketch.js`/`checkbox.js` change.
+Concatenates `checkbox.js`, `builders/common.js`, each `builders/*.js` (in
+the order `package.json`'s `build` script lists them - `common.js` has to
+come before the others, since each one calls `registerBuilder()` at its own
+top level, immediately on load), and `sketch.js` last, then minifies the
+result with [terser](https://github.com/terser/terser) into
+`dist/led-editor.min.js`. No UMD wrapper (unlike
+[d3-easygraph](https://github.com/larsi-org/d3-easygraph)) - this
+deliberately stays plain global-scope code, since p5.js's global mode finds
+`setup()`/`draw()`/`keyPressed()`/etc. as `window` properties, not through a
+module export. larsi.org's `make/led-editor/` copies `dist/led-editor.min.js`
+into its own `lib/larsi.org/` and loads that - rebuild and copy over after
+any source change.
+
+## Adding a new builder
+
+Each live "(Custom)" builder in the Layout dropdown is one file in
+`builders/`, registering an object shaped like:
+
+```js
+registerBuilder({
+	id: '__example__',        // dropdown <option> value
+	label: 'Example (Custom)', // dropdown <option> text
+	createControls() {
+		// Build this builder's own <span class="tb-divider">/<div class="tb-group">
+		// pair (inputs, checkboxes, its own Build button - see builders/common.js's
+		// tbDivider/tbGroup/tbLabel/tbNumberInput/tbCheckbox/tbButton helpers), wire
+		// the Build button's click and each input's Enter-key handler to this.build(),
+		// and return { divider, group }.
+	},
+	build() {
+		// Read this builder's own inputs from the DOM, compute { leds, lines?,
+		// symmetry? }, and call applyLayoutData(name, data) - same shape loadLayout()
+		// builds from a fetched layouts/*.json file.
+	}
+});
+```
+
+Add the new file to `package.json`'s `build` script (anywhere after
+`builders/common.js`) and that's it - `sketch.js`'s `populateLayoutSelect()`
+picks up every registered builder automatically, in `BUILDERS` order (i.e.
+the order the build script lists them), inserting each one's controls into
+the toolbar right before the `#builders-anchor` marker already in
+`index.html`. Neither that file nor `make/led-editor/index.php` on the site
+ever need editing for a new builder - only for a new *real-hardware* layout
+file, which still needs a row in the Projects table and its own `?layout=`
+link (see below).
 
 ## Layout
 
 - `index.html` / `style.css` - the toolbar and page chrome
-- `sketch.js` / `checkbox.js` - the app logic and the LED grid's canvas drawing
-- `dist/led-editor.min.js` - built from those two (see "Building" below);
+- `sketch.js` / `checkbox.js` - the app shell (canvas, rendering, pan/zoom,
+  animation state, keyboard/mouse handling) and the LED grid's canvas drawing
+- `builders/common.js` - the shared `{id, label, createControls(), build()}`
+  registry every live builder below registers into, small DOM-building
+  helpers, and the symmetry math more than one builder shares
+  (`computeSymmetry`, `computeRadialSymmetry`)
+- `builders/circle.js` / `hex.js` / `matrix.js` / `cube.js` - one file per
+  live "(Custom)" builder in the Layout dropdown, each owning its own
+  geometry *and* its own toolbar controls (see "Adding a new builder" below)
+- `dist/led-editor.min.js` - built from all of those (see "Building" below);
   `index.html` loads this, not the source files directly
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
   runtime by the **Layout** dropdown; see "Layout file format" below
