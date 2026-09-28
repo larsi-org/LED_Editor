@@ -111,11 +111,14 @@ function inMainView(x, y) {
 	return x >= 0 && x < DIM && y >= 0 && y < DIM;
 }
 
-// Same dx/dy/f the main (non-icon) drawLEDs() call actually draws with, for hit-testing at
-// the current pan/zoom - mouseReleased() needs this to stay in sync with what's on screen.
+// Same dx/dy/f/sf the main (non-icon) drawLEDs() call actually draws with, for hit-testing
+// at the current pan/zoom - mouseReleased() needs this to stay in sync with what's on
+// screen. sf (size) deliberately doesn't pick up viewZoom, matching drawLEDs()'s own sf -
+// the hit target stays the same fixed size a zoomed-apart LED is actually drawn at, not a
+// zoomed-up one, so click precision improves right along with the added visual spacing.
 function mainViewProjection() {
 	const f = Math.round(0.9 * (LEDS_DX - 1));
-	return { dx: LEDS_DX + viewPanX, dy: LEDS_DY + viewPanY, f: f * viewZoom };
+	return { dx: LEDS_DX + viewPanX, dy: LEDS_DY + viewPanY, f: f * viewZoom, sf: f };
 }
 
 function setup() {
@@ -460,14 +463,23 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	drawingContext.rect(dx - a, dy - a, 2 * a, 2 * a);
 	drawingContext.clip();
 
-	// content transform: dx/dy shift by the pan, f scales by the zoom. Composing this with
-	// Checkbox.getPosX/Y's own dx + f*posX reduces to exactly the same zoom-to-cursor formula
-	// lib/larsi.org/point-cloud-renderer-2d.js's project() uses ((pos - center) * zoom + center
-	// + pan) - it simplifies this far because dx/dy already *are* that center (LEDS_DX/LEDS_DY),
-	// so the "- center" term cancels. See zoomViewAt() below for the matching zoom-to-cursor math.
+	// position transform: dx/dy shift by the pan, f scales by the zoom - spreading LEDs
+	// apart from each other as you zoom in. Composing this with Checkbox.getPosX/Y's own
+	// dx + f*posX reduces to exactly the same zoom-to-cursor formula
+	// lib/larsi.org/point-cloud-renderer-2d.js's project() uses ((pos - center) * zoom +
+	// center + pan) - it simplifies this far because dx/dy already *are* that center
+	// (LEDS_DX/LEDS_DY), so the "- center" term cancels. See zoomViewAt() below for the
+	// matching zoom-to-cursor math.
+	//
+	// LED *size* deliberately does NOT scale with zoom (sf stays the plain unzoomed f) -
+	// the whole point of zooming in is to make a dense build (Cube (Custom) N=8, Hex N=13)
+	// easier to edit by spacing its LEDs apart, not by uniformly magnifying the picture.
+	// Scaling the circles too would leave them just as hard to click apart as before, only
+	// bigger - it's the *gap* between LEDs that needs to grow, not the LEDs themselves.
 	const cdx = dx + viewPanX;
 	const cdy = dy + viewPanY;
 	const cf = f * viewZoom;
+	const sf = f;
 
 	// wires
 	stroke(STROKE_WIRE);
@@ -482,8 +494,8 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	// checked-in files) have no such depth axis, so draw order is a no-op for them either way.
 	for (let i = leds.length - 1; i >= 0; i--) {
 		leds[i].setState(states[currentFrame][i]);
-		if (icon) leds[i].draw(cdx, cdy, cf);
-		else leds[i].draw(cdx, cdy, cf, mouseX, mouseY);
+		if (icon) leds[i].draw(cdx, cdy, cf, sf);
+		else leds[i].draw(cdx, cdy, cf, sf, mouseX, mouseY);
 	}
 
 	pop(); // otherwise the next drawLEDs() call stays clipped to this one's rect
@@ -676,14 +688,14 @@ function mouseReleased() {
 	dragging = false;
 	if (wasPan) return; // a real drag pans the view - don't also toggle whatever's under the cursor
 
-	const { dx, dy, f } = mainViewProjection();
+	const { dx, dy, f, sf } = mainViewProjection();
 	if (mouseButton === LEFT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, mouseX, mouseY)) toggleLED(i);
+			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) toggleLED(i);
 		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, mouseX, mouseY)) states[current][i] = !states[current][i];
+			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) states[current][i] = !states[current][i];
 		}
 	}
 }
