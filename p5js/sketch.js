@@ -20,13 +20,39 @@ const LAYOUTS = [
 
 let directory = 'hex10';
 
-// ?layout=<name>.json overrides the default landing layout - e.g.
-// ?layout=led_7x7.json opens straight on that layout instead of making the
-// visitor pick it from the dropdown themselves. Read straight off the URL
-// client-side, no server involvement needed.
-const layoutParam = new URLSearchParams(window.location.search).get('layout');
+// Two ways a project page can land directly on a specific layout instead of making the
+// visitor pick it from the dropdown themselves - both read straight off the URL client-side,
+// no server involvement needed:
+//
+// ?layout=<name>.json - a real checked-in layouts/*.json file (e.g. ?layout=led_7x7.json).
+// Still the only way to land on a hand-edited layout with no live builder able to reproduce
+// it, or one that's drifted from what its builder would currently produce - real files stay
+// authoritative, so this wins if both params are somehow present.
+//
+// ?builder=<name>&count=<n>[&zigzag=<0|1>] (or &countX=/&countY= for Matrix's two dimensions)
+// - builds live at load time instead, straight from these params, the same as clicking that
+// builder's own Build button would but with no checked-in file needed at all. <name> is one
+// of BUILDERS' own ids with its __ wrapping stripped (circle, hex, matrix, cube, triangle -
+// see setup() below for where the wrapping goes back on). Missing/invalid params fall back to
+// that builder's own toolbar defaults (see each builders/*.js's own build(params) for how).
+const urlParams = new URLSearchParams(window.location.search);
+const layoutParam = urlParams.get('layout');
+const builderParam = urlParams.get('builder');
+
 if (layoutParam && /^[\w-]+\.json$/.test(layoutParam)) {
 	directory = layoutParam.replace(/\.json$/, '');
+}
+
+// Undefined (not present in the URL at all) lets a builder's own build(params) fall back to
+// its toolbar default via ?? - only an explicit zigzag=0/1 (or true/false) should override it.
+function parseBuilderParams(urlParams) {
+	const zigzagRaw = urlParams.get('zigzag');
+	return {
+		count: urlParams.get('count'),
+		countX: urlParams.get('countX'),
+		countY: urlParams.get('countY'),
+		zigzag: zigzagRaw === null ? undefined : (zigzagRaw === '1' || zigzagRaw === 'true')
+	};
 }
 
 // colors - read from led-editor.css's :root palette (see led.js's cssVar() comment for why
@@ -129,7 +155,17 @@ function setup() {
 
 	populateLayoutSelect();
 	wireToolbar();
-	loadLayout(directory);
+
+	// ?layout= (already resolved into `directory` above) takes priority if present; otherwise
+	// try ?builder=, falling back to the plain file load if it doesn't name a real builder
+	// (covers both "no ?builder= at all" and a misspelled one, same as an invalid ?layout=
+	// already silently falls back today since its regex just won't match).
+	const builder = !layoutParam && builderParam && BUILDERS.find((b) => b.id === `__${builderParam}__`);
+	if (builder) {
+		selectBuilder(builder, parseBuilderParams(urlParams));
+	} else {
+		loadLayout(directory);
+	}
 }
 
 async function loadLayout(name) {
@@ -535,20 +571,25 @@ function populateLayoutSelect() {
 	}
 
 	select.addEventListener('change', () => {
-		document.getElementById('output').hidden = true;
-		for (const b of BUILDERS) {
-			b._divider.hidden = true;
-			b._group.hidden = true;
-		}
 		const builder = BUILDERS.find((b) => b.id === select.value);
-		if (builder) {
-			builder._divider.hidden = false;
-			builder._group.hidden = false;
-			builder.build();
-		} else {
-			loadLayout(select.value);
-		}
+		if (builder) selectBuilder(builder); // no params - build() falls back to its own toolbar inputs
+		else loadLayout(select.value);
 	});
+}
+
+// Shows builder's own controls and builds it - shared by the dropdown's change handler above
+// (manual selection, no params - build() falls back to reading this builder's own toolbar
+// inputs) and setup()'s ?builder= URL handling (params supplied, see parseBuilderParams()).
+function selectBuilder(builder, params) {
+	document.getElementById('output').hidden = true;
+	for (const b of BUILDERS) {
+		b._divider.hidden = true;
+		b._group.hidden = true;
+	}
+	document.getElementById('layout').value = builder.id;
+	builder._divider.hidden = false;
+	builder._group.hidden = false;
+	builder.build(params);
 }
 
 document.getElementById('copy-btn').addEventListener('click', () => {

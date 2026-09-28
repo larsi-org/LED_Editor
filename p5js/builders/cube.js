@@ -78,8 +78,12 @@ registerBuilder({
 		return { divider, group };
 	},
 
-	build() {
-		const n = Math.min(10, Math.max(2, parseInt(document.getElementById('cube-n').value, 10) || 2));
+	// params (optional): { count } from a ?builder=cube&count=.. URL - see sketch.js's
+	// parseBuilderParams()/selectBuilder(). Falls back to this builder's own N input when a
+	// param is missing (manual Build click passes no params at all) or not present in the URL.
+	build(params) {
+		const n = Math.min(10, Math.max(2, parseInt(params?.count ?? document.getElementById('cube-n').value, 10) || 2));
+		document.getElementById('cube-n').value = n;
 		buildCube(n);
 	}
 });

@@ -62,8 +62,14 @@ registerBuilder({
 		return { divider, group };
 	},
 
-	build() {
-		const n = Math.min(20, Math.max(3, parseInt(document.getElementById('hex-n').value, 10) || 3));
-		buildHex(n, document.getElementById('hex-zigzag').checked);
+	// params (optional): { count, zigzag } from a ?builder=hex&count=..&zigzag=.. URL - see
+	// sketch.js's parseBuilderParams()/selectBuilder(). Falls back to this builder's own
+	// inputs for whichever of the two is missing (or for both, on a manual Build click).
+	build(params) {
+		const n = Math.min(20, Math.max(3, parseInt(params?.count ?? document.getElementById('hex-n').value, 10) || 3));
+		const zigzag = params?.zigzag ?? document.getElementById('hex-zigzag').checked;
+		document.getElementById('hex-n').value = n;
+		document.getElementById('hex-zigzag').checked = zigzag;
+		buildHex(n, zigzag);
 	}
 });

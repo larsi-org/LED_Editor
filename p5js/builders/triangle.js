@@ -88,8 +88,14 @@ registerBuilder({
 		return { divider, group };
 	},
 
-	build() {
-		const n = Math.min(20, Math.max(2, parseInt(document.getElementById('triangle-n').value, 10) || 2));
-		buildTriangle(n, document.getElementById('triangle-zigzag').checked);
+	// params (optional): { count, zigzag } from a ?builder=triangle&count=..&zigzag=.. URL -
+	// see sketch.js's parseBuilderParams()/selectBuilder(). Falls back to this builder's own
+	// inputs for whichever of the two is missing (or for both, on a manual Build click).
+	build(params) {
+		const n = Math.min(20, Math.max(2, parseInt(params?.count ?? document.getElementById('triangle-n').value, 10) || 2));
+		const zigzag = params?.zigzag ?? document.getElementById('triangle-zigzag').checked;
+		document.getElementById('triangle-n').value = n;
+		document.getElementById('triangle-zigzag').checked = zigzag;
+		buildTriangle(n, zigzag);
 	}
 });

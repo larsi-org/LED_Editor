@@ -112,8 +112,18 @@ registerBuilder({
 		return { divider, group };
 	},
 
-	build() {
-		const clampDim = (id) => Math.min(32, Math.max(1, parseInt(document.getElementById(id).value, 10) || 1));
-		buildMatrix(clampDim('matrix-width'), clampDim('matrix-height'), document.getElementById('matrix-zigzag').checked);
+	// params (optional): { countX, countY, zigzag } from a ?builder=matrix&countX=..&countY=..
+	// URL (Matrix is the one builder with two dimensions, hence X/Y instead of a plain count -
+	// see sketch.js's parseBuilderParams()/selectBuilder()). Falls back to this builder's own
+	// inputs for whichever param is missing, or for all three on a manual Build click.
+	build(params) {
+		const clampDim = (v) => Math.min(32, Math.max(1, parseInt(v, 10) || 1));
+		const width = clampDim(params?.countX ?? document.getElementById('matrix-width').value);
+		const height = clampDim(params?.countY ?? document.getElementById('matrix-height').value);
+		const zigzag = params?.zigzag ?? document.getElementById('matrix-zigzag').checked;
+		document.getElementById('matrix-width').value = width;
+		document.getElementById('matrix-height').value = height;
+		document.getElementById('matrix-zigzag').checked = zigzag;
+		buildMatrix(width, height, zigzag);
 	}
 });

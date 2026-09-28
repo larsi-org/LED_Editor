@@ -32,8 +32,12 @@ registerBuilder({
 		return { divider, group };
 	},
 
-	build() {
-		const n = Math.min(20, Math.max(3, parseInt(document.getElementById('circle-n').value, 10) || 3));
+	// params (optional): { count } from a ?builder=circle&count=.. URL - see sketch.js's
+	// parseBuilderParams()/selectBuilder(). Falls back to this builder's own N input when a
+	// param is missing (manual Build click passes no params at all) or not present in the URL.
+	build(params) {
+		const n = Math.min(20, Math.max(3, parseInt(params?.count ?? document.getElementById('circle-n').value, 10) || 3));
+		document.getElementById('circle-n').value = n;
 		buildCircle(n);
 	}
 });
