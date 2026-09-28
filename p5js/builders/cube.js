@@ -24,7 +24,7 @@ function buildCube(n) {
 		for (let row = 0; row < n; row++) {
 			const y = topY - row * D;
 			for (let col = 0; col < n; col++) {
-				cubeLeds.push({ x: -1 + col * P + row * D, y, r: 0.1 });
+				cubeLeds.push({ x: -1 + col * P + row * D, y });
 			}
 		}
 	}
@@ -58,7 +58,7 @@ function buildCube(n) {
 	// pure x-shift, row a diagonal x+y shift), so a physical cube rotation doesn't correspond
 	// to any simple 2D transform of the projected (x, y) the way builders/matrix.js's
 	// computeMatrixSymmetry's axis flips do for a flat grid - not worth faking.
-	applyLayoutData(`cube ${n}`, { leds: cubeLeds, lines: cubeLines });
+	applyLayoutData(`cube ${n}`, { leds: cubeLeds, r: 0.1, lines: cubeLines });
 }
 
 registerBuilder({

@@ -17,7 +17,7 @@ function buildMatrix(dimX, dimY, zigzag) {
 		const y = (j - (dimY - 1) / 2) * inc;
 		for (let i = 0; i < dimX; i++) {
 			const x = direction * (i - (dimX - 1) / 2) * inc;
-			matrixLeds.push({ x, y, r: 0.1 });
+			matrixLeds.push({ x, y });
 		}
 		if (zigzag) direction *= -1;
 	}
@@ -52,6 +52,7 @@ function buildMatrix(dimX, dimY, zigzag) {
 
 	applyLayoutData(`matrix ${dimX}×${dimY}`, {
 		leds: matrixLeds,
+		r: 0.1,
 		lines: matrixLines,
 		symmetry: computeMatrixSymmetry(matrixLeds, dimX, dimY)
 	});

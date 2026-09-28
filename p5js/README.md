@@ -325,7 +325,8 @@ from (see "Cube (Custom)" above) never had a `symmetry` key either.
 
 ```json
 {
-  "leds": [{ "x": -1, "y": -1, "r": 0.1 }, ...],
+  "leds": [{ "x": -1, "y": -1 }, ...],
+  "r": 0.1,
   "symmetry": [9, 8, 7, ...],
   "lines": [[0, 2], [3, 5], ...]
 }
@@ -333,7 +334,11 @@ from (see "Cube (Custom)" above) never had a `symmetry` key either.
 
 - `leds` - one entry per LED, in display-number order (LED 1 is `leds[0]`,
   etc.). `x`/`y` are position, normalized to roughly `[-1, 1]` (canvas center
-  is `(0, 0)`, edge is `±1`); `r` is the LED's dot size on that same scale.
+  is `(0, 0)`, edge is `±1`).
+- `r` - the LED dot size, same `[-1, 1]` scale as `x`/`y`. One value for the
+  whole layout, not per LED - no builder, and no layout file before they
+  were all deleted (see "Layout" above), has ever varied it per LED, so it
+  lives once here instead of once per `leds` entry.
 - `symmetry` - optional. `symmetry[i]` is "the next LED in LED `i`'s
   mirror-symmetry group": a left-click toggles LED `i`, then walks
   `j = symmetry[j]` until it loops back to `i`, setting each one to `i`'s new

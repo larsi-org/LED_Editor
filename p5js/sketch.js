@@ -82,6 +82,12 @@ let leds = [];
 // Lines - Cube/Hex/Matrix/Triangle all generate these; Circle doesn't
 let ledLines = [];
 
+// Every LED in a layout always shares one radius (normalized to the same [-1, 1] scale as
+// posX/posY) - no builder, and no checked-in layout before they were all deleted, has ever
+// varied it per LED - so this lives once here instead of once per Led instance (see led.js's
+// own comment on why its constructor/getSize()/isOver()/draw() dropped the field entirely).
+let radius = 0.1;
+
 // symmetry[i] is the next LED in i's symmetry cycle (i itself if none)
 let symmetry = [];
 
@@ -187,7 +193,8 @@ async function loadLayout(name) {
 // way)
 function applyLayoutData(name, data) {
 	directory = name;
-	leds = data.leds.map((led, i) => new Led(String(i + 1), led.x, led.y, led.r));
+	leds = data.leds.map((led, i) => new Led(String(i + 1), led.x, led.y));
+	radius = data.r;
 	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
@@ -252,7 +259,7 @@ function drawLEDs(dx, dy, a, currentFrame, viewZoom, viewPanX, viewPanY) {
 	// level (see buildCube's depth-skew comment). Flat layouts (Circle/Hex/Matrix, non-cube
 	// checked-in files) have no such depth axis, so draw order is a no-op for them either way.
 	for (let i = leds.length - 1; i >= 0; i--) {
-		leds[i].draw(states[currentFrame][i], cdx, cdy, cf, sf, mouseX, mouseY);
+		leds[i].draw(states[currentFrame][i], cdx, cdy, cf, sf, radius, mouseX, mouseY);
 	}
 
 	pop(); // otherwise the next drawLEDs() call stays clipped to this one's rect
@@ -281,7 +288,7 @@ function renderThumb(ti) {
 	g.noStroke();
 	for (let i = leds.length - 1; i >= 0; i--) {
 		g.fill(Led.backgroundColor(states[ti][i]));
-		const size = leds[i].getSize(f);
+		const size = leds[i].getSize(f, radius);
 		g.ellipse(leds[i].getPosX(c, f), leds[i].getPosY(c, f), size, size);
 	}
 
@@ -430,7 +437,7 @@ function clean(v) {
 }
 
 function exportLayout() {
-	const data = { leds: leds.map((led) => ({ x: clean(led.posX), y: clean(led.posY), r: clean(led.size) })) };
+	const data = { leds: leds.map((led) => ({ x: clean(led.posX), y: clean(led.posY) })), r: clean(radius) };
 	if (symmetry.some((v, i) => v !== i)) data.symmetry = symmetry;
 	if (ledLines.length) data.lines = ledLines;
 	showOutput(
@@ -505,11 +512,11 @@ function mouseReleased() {
 	const { dx, dy, f, sf } = mainViewProjection();
 	if (mouseButton === LEFT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) toggleLED(i);
+			if (leds[i].isOver(dx, dy, f, sf, radius, mouseX, mouseY)) toggleLED(i);
 		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, sf, mouseX, mouseY)) {
+			if (leds[i].isOver(dx, dy, f, sf, radius, mouseX, mouseY)) {
 				states[current][i] = !states[current][i];
 				invalidateCurrentThumb();
 			}

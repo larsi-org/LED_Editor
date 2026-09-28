@@ -11,7 +11,7 @@ function buildHex(n, zigzag) {
 	function addRow(count, y) {
 		for (let i = 0; i < count; i++) {
 			const x = direction * dx * (i - (count - 1) / 2);
-			hexLeds.push({ x, y, r: 0.1 });
+			hexLeds.push({ x, y });
 		}
 	}
 
@@ -38,7 +38,7 @@ function buildHex(n, zigzag) {
 	// pitch is what a hex lattice *is*.
 	const hexLines = [0, 60, 120].flatMap((angle) => collinearLines(hexLeds, angle));
 
-	applyLayoutData(`hex ${n}`, { leds: hexLeds, lines: hexLines, symmetry: computeRadialSymmetry(hexLeds) });
+	applyLayoutData(`hex ${n}`, { leds: hexLeds, r: 0.1, lines: hexLines, symmetry: computeRadialSymmetry(hexLeds) });
 }
 
 registerBuilder({

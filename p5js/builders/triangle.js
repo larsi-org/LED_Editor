@@ -33,7 +33,7 @@ function buildTriangle(n, zigzag) {
 		const y = 0.5 - row * dy;
 		for (let i = 0; i < count; i++) {
 			const x = direction * dx * (i - (count - 1) / 2);
-			triLeds.push({ x, y, r: 0.1 });
+			triLeds.push({ x, y });
 		}
 		if (zigzag) direction *= -1;
 	}
@@ -43,7 +43,7 @@ function buildTriangle(n, zigzag) {
 	// became its second consumer.
 	const triLines = [0, 60, 120].flatMap((angle) => collinearLines(triLeds, angle));
 
-	applyLayoutData(`triangle ${n}`, { leds: triLeds, lines: triLines, symmetry: computeTriangleSymmetry(triLeds) });
+	applyLayoutData(`triangle ${n}`, { leds: triLeds, r: 0.1, lines: triLines, symmetry: computeTriangleSymmetry(triLeds) });
 }
 
 // Symmetry group of an equilateral triangle: full D3 (dihedral order 6) - 3 rotations
