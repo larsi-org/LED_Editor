@@ -447,6 +447,19 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 	fill(BACKGROUND);
 	rect(dx - a, dy - a, 2 * a, 2 * a);
 
+	// clip everything drawn below to that same border rect - without this, a zoomed-in main
+	// view's content overflows its square and spills into whatever's drawn next in the same
+	// canvas (the thumbnail strip below it). p5 1.x has no clip()/noClip() of its own (that's
+	// a later p5 2.x addition), so this goes straight through drawingContext, p5's own name for
+	// the raw CanvasRenderingContext2D. push()/pop() (not drawingContext.save()/restore()
+	// directly) scope it to just this call - push() already calls the context's save()
+	// internally, and also keeps p5's own tracked style state (not just the raw context) in
+	// sync with whatever pop() restores it to.
+	push();
+	drawingContext.beginPath();
+	drawingContext.rect(dx - a, dy - a, 2 * a, 2 * a);
+	drawingContext.clip();
+
 	// content transform: dx/dy shift by the pan, f scales by the zoom. Composing this with
 	// Checkbox.getPosX/Y's own dx + f*posX reduces to exactly the same zoom-to-cursor formula
 	// lib/larsi.org/point-cloud-renderer-2d.js's project() uses ((pos - center) * zoom + center
@@ -472,6 +485,8 @@ function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, vie
 		if (icon) leds[i].draw(cdx, cdy, cf);
 		else leds[i].draw(cdx, cdy, cf, mouseX, mouseY);
 	}
+
+	pop(); // otherwise the next drawLEDs() call stays clipped to this one's rect
 }
 
 function draw() {
