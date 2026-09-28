@@ -9,7 +9,22 @@
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.0/css/all.min.css" rel="stylesheet"
 	integrity="sha384-sTlsophtwz/I4myskS3OIJf5VvEojkXKZyBTWZm0YD/K1pN7C5wpBPLyrsbr1SU2" crossorigin="anonymous">
 <link rel="stylesheet" href="led-editor.css">
-<link rel="stylesheet" href="style.css">
+<style>
+	/* Page-frame chrome only, specific to this bare page (larsi.org's make/led-editor/
+	   index.php has its own site-wide body/link styling from site.css instead) - everything
+	   else lives in led-editor.css, loaded above. Inlined rather than its own file since it's
+	   just these two rules and only this one page ever used it. */
+	body {
+		background: var(--bg-page);
+		color: var(--text-body);
+		font-family: sans-serif;
+		padding: 16px;
+	}
+
+	a {
+		color: var(--link);
+	}
+</style>
 </head>
 <body>
 

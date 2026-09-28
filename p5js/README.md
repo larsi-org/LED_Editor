@@ -86,8 +86,9 @@ link (see below).
 
 ## Layout
 
-- `index.html` / `style.css` - the toolbar and page chrome (`style.css` is
-  just this repo page's own body/link styling now - see `led-editor.css`)
+- `index.html` - the toolbar and page chrome, plus its own inline `<style>`
+  for this bare page's `body`/`a` styling (just two rules, and only this
+  one page ever needs them, so no separate file for it - see `led-editor.css`)
 - `led-editor.css` - every color and UI rule for the toolbar/canvas/output
   panel, in one `:root` palette shared by both this repo's `index.html` and
   larsi.org's `make/led-editor/index.php` (copied to `lib/larsi.org/` -
