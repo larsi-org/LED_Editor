@@ -46,7 +46,9 @@ deliberately stays plain global-scope code, since p5.js's global mode finds
 `setup()`/`draw()`/`keyPressed()`/etc. as `window` properties, not through a
 module export. larsi.org's `make/led-editor/` copies `dist/led-editor.min.js`
 into its own `lib/larsi.org/` and loads that - rebuild and copy over after
-any source change.
+any source change. `led-editor.css` isn't part of this build (nothing to
+concatenate, it's already one file) - just copy it to `lib/larsi.org/`
+directly after editing it.
 
 ## Adding a new builder
 
@@ -84,7 +86,14 @@ link (see below).
 
 ## Layout
 
-- `index.html` / `style.css` - the toolbar and page chrome
+- `index.html` / `style.css` - the toolbar and page chrome (`style.css` is
+  just this repo page's own body/link styling now - see `led-editor.css`)
+- `led-editor.css` - every color and UI rule for the toolbar/canvas/output
+  panel, in one `:root` palette shared by both this repo's `index.html` and
+  larsi.org's `make/led-editor/index.php` (copied to `lib/larsi.org/` -
+  see "Building" below). `led.js`/`sketch.js` read their own canvas colors
+  from this same file's custom properties instead of hardcoding a literal -
+  one place to change any color, not three
 - `sketch.js` / `led.js` - the app shell (canvas, rendering, pan/zoom,
   animation state, keyboard/mouse handling) and the LED grid's canvas drawing
 - `builders/common.js` - the shared `{id, label, createControls(), build()}`
