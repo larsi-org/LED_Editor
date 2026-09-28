@@ -32,8 +32,8 @@ class Led {
 
 	// No size/radius field - every LED in a layout always shares the same radius (see
 	// sketch.js's own radius variable, read from the layout's one top-level r), so there's
-	// nothing per-instance to store here either; isOver()/draw() take it as a plain parameter
-	// instead, same as they already do for f/sf.
+	// nothing per-instance to store here either; isOver()/draw() take an already-computed
+	// pixel size as a plain parameter instead, same as they already do for f.
 	constructor(label, posX, posY) {
 		this.label = label;
 		this.posX  = posX;
@@ -48,17 +48,18 @@ class Led {
 		return Math.round(dy + f * this.posY);
 	}
 
-	// f positions the LED (spacing between LEDs); sf sizes it (circle diameter) - these are
-	// the same value everywhere except the main view while it's zoomed, where f grows with
-	// the zoom (spreading LEDs apart) but sf deliberately doesn't (see drawLEDs()'s own
-	// comment on why: zooming in is supposed to make dense LEDs easier to pick apart from
-	// each other, which needs more space *between* them, not bigger circles - scaling both
-	// together would just be a uniform magnification that leaves them exactly as hard to
-	// tell apart as before).
-	isOver(dx, dy, f, sf, r, mx, my) {
+	// f positions the LED (spacing between LEDs); size is its already-computed circle diameter
+	// (the caller's own f * radius, rounded - see sketch.js's drawLEDs()/mainViewProjection()).
+	// These come from the same numbers everywhere except the main view while it's zoomed,
+	// where f grows with the zoom (spreading LEDs apart) but size deliberately doesn't (see
+	// drawLEDs()'s own comment on why: zooming in is supposed to make dense LEDs easier to
+	// pick apart from each other, which needs more space *between* them, not bigger circles -
+	// scaling both together would just be a uniform magnification that leaves them exactly as
+	// hard to tell apart as before).
+	isOver(dx, dy, f, size, mx, my) {
 		const x = mx - this.getPosX(dx, f);
 		const y = my - this.getPosY(dy, f);
-		const rad = Math.round(sf * r) / 2;
+		const rad = size / 2;
 		return x * x + y * y <= rad * rad;
 	}
 
@@ -70,10 +71,9 @@ class Led {
 	// its own plain filled circles into a cached offscreen buffer instead) - this is always
 	// the main, interactive view now, so there's no more icon-mode branch to skip
 	// stroke/hover/label for.
-	draw(state, dx, dy, f, sf, r, mx, my) {
-		const size = Math.round(sf * r);
+	draw(state, dx, dy, f, size, mx, my) {
 		fill(Led.backgroundColor(state));
-		stroke(Led.strokeColor(this.isOver(dx, dy, f, sf, r, mx, my)));
+		stroke(Led.strokeColor(this.isOver(dx, dy, f, size, mx, my)));
 		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), size, size);
 
 		fill(Led.textColor(state));
