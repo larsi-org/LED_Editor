@@ -51,7 +51,6 @@ const DIM2 = DIM / 2;
 
 const LEDS_DX = DIM2;
 const LEDS_DY = DIM2; // buttons/label used to live in a reserved band above this; now on-page HTML
-const LEDS_F  = Math.round(0.9 * DIM2);
 
 // thumbnails sit below the main grid (not beside it - that made the canvas
 // twice as wide as it needed to be, always overflowing the page)
@@ -75,6 +74,49 @@ let current = 0;
 
 // clipboard
 let clipboard = [];
+
+// Interactive pan/zoom for the main LED view only (thumbnails always stay unzoomed - see
+// drawLEDs()'s default params). Same gesture math as lib/larsi.org/point-cloud-renderer-2d.js
+// (wheel zoom-to-cursor, drag-to-pan, double-click/tap reset) but reimplemented here rather
+// than constructing that class directly: it owns its own <canvas>/2D context and repaints by
+// blitting a full ImageData buffer, whereas this sketch already redraws every p5 frame and
+// draws circles/lines/text, not pixels - only the gesture *math* carries over, the same
+// reasoning Mandelbrot's own hand-rolled zoom used (see CLAUDE.md's
+// point-cloud-renderer-architecture note). No pinch-zoom: p5's default touch-to-mouse
+// simulation already gives single-finger drag-to-pan and tap-to-toggle for free as long as no
+// touchStarted/touchMoved/touchEnded are defined, but pinch needs real multi-touch handling,
+// which this doesn't add (yet) - wheel zoom (desktop) and double-click/tap reset are the only
+// way to zoom in for now.
+let viewZoom = 1, viewPanX = 0, viewPanY = 0;
+const clampViewZoom = (z) => Math.max(0.5, Math.min(40, z));
+
+// Keeps the point under (mx, my) fixed on screen while zoom changes - zoom-to-cursor, same
+// formula as PointCloudRenderer2D's zoomAt(), with LEDS_DX/LEDS_DY (the main view's fixed
+// center) standing in for its W/2/H/2.
+function zoomViewAt(mx, my, newZoom) {
+	newZoom = clampViewZoom(newZoom);
+	const factor = newZoom / viewZoom;
+	viewPanX = mx - LEDS_DX - (mx - LEDS_DX - viewPanX) * factor;
+	viewPanY = my - LEDS_DY - (my - LEDS_DY - viewPanY) * factor;
+	viewZoom = newZoom;
+}
+
+function resetView() {
+	viewZoom = 1;
+	viewPanX = 0;
+	viewPanY = 0;
+}
+
+function inMainView(x, y) {
+	return x >= 0 && x < DIM && y >= 0 && y < DIM;
+}
+
+// Same dx/dy/f the main (non-icon) drawLEDs() call actually draws with, for hit-testing at
+// the current pan/zoom - mouseReleased() needs this to stay in sync with what's on screen.
+function mainViewProjection() {
+	const f = Math.round(0.9 * (LEDS_DX - 1));
+	return { dx: LEDS_DX + viewPanX, dy: LEDS_DY + viewPanY, f: f * viewZoom };
+}
 
 function setup() {
 	const canvas = createCanvas(DIM, THUMB_TOP + 100); // starts at 1 thumbnail row; grows with the frame count
@@ -104,6 +146,7 @@ function applyLayoutData(name, data) {
 	clipboard = leds.map(() => false);
 	states = [leds.map(() => false)];
 	current = 0;
+	resetView(); // a stale zoom/pan from the previous layout wouldn't make sense on a new one
 }
 
 // Unlike create_matrix.py (which spaces each axis independently across the full
@@ -392,25 +435,42 @@ function buildCubeFromInputs() {
 	buildCube(n);
 }
 
-function drawLEDs(dx, dy, a, currentFrame, icon) {
+// viewZoom/viewPanX/viewPanY default to identity (1, 0, 0) for thumbnails, which always
+// show the whole layout unzoomed - only the main view (see draw()) passes the live values.
+function drawLEDs(dx, dy, a, currentFrame, icon, viewZoom = 1, viewPanX = 0, viewPanY = 0) {
 	a -= 1;
 	const f = Math.round(0.9 * a);
 
-	// border
+	// border - stays fixed, framing the viewport; only the content within it (wires, LEDs)
+	// pans/zooms, same "viewport stays put, content moves" feel as a map or image viewer
 	stroke(STROKE_DIV);
 	fill(BACKGROUND);
 	rect(dx - a, dy - a, 2 * a, 2 * a);
 
+	// content transform: dx/dy shift by the pan, f scales by the zoom. Composing this with
+	// Checkbox.getPosX/Y's own dx + f*posX reduces to exactly the same zoom-to-cursor formula
+	// lib/larsi.org/point-cloud-renderer-2d.js's project() uses ((pos - center) * zoom + center
+	// + pan) - it simplifies this far because dx/dy already *are* that center (LEDS_DX/LEDS_DY),
+	// so the "- center" term cancels. See zoomViewAt() below for the matching zoom-to-cursor math.
+	const cdx = dx + viewPanX;
+	const cdy = dy + viewPanY;
+	const cf = f * viewZoom;
+
 	// wires
 	stroke(STROKE_WIRE);
 	for (const [i0, i1] of ledLines) {
-		line(leds[i0].getPosX(dx, f), leds[i0].getPosY(dy, f), leds[i1].getPosX(dx, f), leds[i1].getPosY(dy, f));
+		line(leds[i0].getPosX(cdx, cf), leds[i0].getPosY(cdy, cf), leds[i1].getPosX(cdx, cf), leds[i1].getPosY(cdy, cf));
 	}
 
-	for (let i = 0; i < leds.length; i++) {
+	// Reverse draw order (last LED first) so farther-away LEDs paint underneath nearer ones,
+	// not on top of them - matters for Cube (Custom): buildCube() pushes each level's LEDs in
+	// front-to-back row order, so a later index is always farther from the viewer within that
+	// level (see buildCube's depth-skew comment). Flat layouts (Circle/Hex/Matrix, non-cube
+	// checked-in files) have no such depth axis, so draw order is a no-op for them either way.
+	for (let i = leds.length - 1; i >= 0; i--) {
 		leds[i].setState(states[currentFrame][i]);
-		if (icon) leds[i].draw(dx, dy, f);
-		else leds[i].draw(dx, dy, f, mouseX, mouseY);
+		if (icon) leds[i].draw(cdx, cdy, cf);
+		else leds[i].draw(cdx, cdy, cf, mouseX, mouseY);
 	}
 }
 
@@ -422,7 +482,7 @@ function draw() {
 	updateToolbarUI();
 	updateCanvasHeight();
 
-	// thumbnails, 8 wide, up to 8 rows
+	// thumbnails, 8 wide, up to 8 rows - always unzoomed, independent of the main view
 	const rows = Math.min(8, Math.ceil(states.length / 8));
 	for (let ty = 0; ty < rows; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
@@ -432,7 +492,7 @@ function draw() {
 	}
 
 	// main LEDs
-	drawLEDs(LEDS_DX, LEDS_DY, LEDS_DX, current, false);
+	drawLEDs(LEDS_DX, LEDS_DY, LEDS_DX, current, false, viewZoom, viewPanX, viewPanY);
 }
 
 function toggleWithSymmetry(i) {
@@ -561,16 +621,54 @@ function keyReleased() {
 	return false;
 }
 
+// Distinguishes a click (toggle whatever LED is under the cursor) from a drag (pan the view)
+// - both start with mousePressed and end with mouseReleased, so this tracks how far the mouse
+// actually moved in between. A small threshold rather than "any movement at all" so a real
+// tap on a touchscreen (which rarely lands at the exact same pixel on press and release)
+// doesn't get misread as a pan and lose its toggle.
+let dragging = false;
+let dragDistance = 0;
+
+function mousePressed() {
+	if (leds.length === 0 || !inMainView(mouseX, mouseY)) return;
+	dragging = true;
+	dragDistance = 0;
+}
+
+function mouseDragged() {
+	if (!dragging) return;
+	viewPanX += mouseX - pmouseX;
+	viewPanY += mouseY - pmouseY;
+	dragDistance += Math.abs(mouseX - pmouseX) + Math.abs(mouseY - pmouseY);
+}
+
+function doubleClicked() {
+	if (inMainView(mouseX, mouseY)) resetView();
+}
+
+// Only zooms while hovering the main LED square - elsewhere (toolbar, thumbnails, the
+// Projects table below), leave the wheel alone so the page still scrolls normally.
+function mouseWheel(event) {
+	if (!inMainView(mouseX, mouseY)) return;
+	zoomViewAt(mouseX, mouseY, viewZoom * Math.exp(-event.delta * 0.001));
+	return false;
+}
+
 function mouseReleased() {
 	if (leds.length === 0) return;
 
+	const wasPan = dragging && dragDistance > 4;
+	dragging = false;
+	if (wasPan) return; // a real drag pans the view - don't also toggle whatever's under the cursor
+
+	const { dx, dy, f } = mainViewProjection();
 	if (mouseButton === LEFT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) toggleLED(i);
+			if (leds[i].isOver(dx, dy, f, mouseX, mouseY)) toggleLED(i);
 		}
 	} else if (mouseButton === RIGHT) {
 		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(LEDS_DX, LEDS_DY, LEDS_F, mouseX, mouseY)) states[current][i] = !states[current][i];
+			if (leds[i].isOver(dx, dy, f, mouseX, mouseY)) states[current][i] = !states[current][i];
 		}
 	}
 }

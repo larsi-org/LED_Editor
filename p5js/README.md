@@ -154,6 +154,13 @@ reproduces `cube3.json` exactly. No Zigzag option (a cube's real wiring
 order is a whole separate problem - see "Symmetry, for the four builders"
 below for why this one skips symmetry too).
 
+Within a level, a farther-away row (see `buildCube`'s own comment on which
+end is "front") can visually overlap a nearer one, especially at higher N
+- `drawLEDs()` draws every layout's LEDs back-to-front (last array index
+first) specifically so the nearer one always wins that overlap instead of
+the farther one painting over it. See also "Pan & zoom" below, which helps
+more the bigger N gets.
+
 ## Symmetry, for the four builders
 
 None of the four save anything to a file on their own - use **Export
@@ -206,6 +213,27 @@ simple 2D transform of the projected (x, y) - same reason the checked-in
   a flat convex shape, so the physical wiring can't be inferred just from
   LED positions the way it can for a flat grid/hex/circle; a rectangular
   grid's rows/columns get one each too (see "Matrix (Custom)" below).
+
+## Pan & zoom
+
+The main LED view (not the thumbnails, which always show the whole layout)
+supports mouse-wheel zoom-to-cursor and click-drag pan, matching the gesture
+feel of `lib/larsi.org/point-cloud-renderer-2d.js`'s zoom (used elsewhere on
+the site by the fractal/point-cloud pages) though not built on that class
+directly - see the comment above `viewZoom`/`viewPanX`/`viewPanY` in
+`sketch.js` for why. Double-click/tap resets back to the default framing.
+Mostly useful for a dense **Cube (Custom)** or **Hex (Custom)** build (N=8
+cube is 512 LEDs, N=13 hex is 469) where LEDs overlap too much at the
+default zoom to click the one you mean. No pinch-zoom yet (see the same
+comment for what that would take) - a single-finger drag still pans on a
+touchscreen, since that comes for free from p5's default touch-to-mouse
+simulation.
+
+A distinct click (not a drag) still toggles whatever LED is under the
+cursor, at whatever the current pan/zoom happens to be - `mouseReleased()`
+tells the two apart by how far the mouse actually moved between press and
+release, not which button, so this works with both the left-click-toggle
+and right-click-toggle-ignoring-symmetry behaviors below.
 
 ## Controls
 
