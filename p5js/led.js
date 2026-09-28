@@ -1,4 +1,4 @@
-class Checkbox {
+class Led {
 	static BACKGROUND_OFF = '#660000';
 	static BACKGROUND_ON  = '#ff3333';
 	static TEXT_OFF       = '#ffffff';
@@ -6,12 +6,11 @@ class Checkbox {
 	static STROKE_NORMAL  = '#000000';
 	static STROKE_HOVER   = '#ffffff';
 
-	constructor(label, posX, posY, size, state) {
+	constructor(label, posX, posY, size) {
 		this.label = label;
 		this.posX  = posX;
 		this.posY  = posY;
 		this.size  = size;
-		this.state = state;
 	}
 
 	getPosX(dx, f) {
@@ -24,14 +23,6 @@ class Checkbox {
 
 	getSize(f) {
 		return Math.round(f * this.size);
-	}
-
-	setState(state) {
-		this.state = state;
-	}
-
-	getState() {
-		return this.state;
 	}
 
 	// f positions the LED (spacing between LEDs); sf sizes it (circle diameter) - these are
@@ -48,16 +39,20 @@ class Checkbox {
 		return x * x + y * y <= r * r;
 	}
 
-	// Thumbnails no longer render through here (see sketch.js's renderThumb(), which draws its
-	// own plain filled circles into a cached offscreen buffer instead) - this is always the
-	// main, interactive view now, so there's no more icon-mode branch to skip
+	// state is passed in rather than stored on the instance - states[currentFrame][i]
+	// (sketch.js) is already the one source of truth for on/off, so caching a copy here too
+	// would just be a second place it could (in principle) drift out of sync for no benefit.
+	//
+	// Thumbnails no longer render through here (see sketch.js's renderThumb(), which draws
+	// its own plain filled circles into a cached offscreen buffer instead) - this is always
+	// the main, interactive view now, so there's no more icon-mode branch to skip
 	// stroke/hover/label for.
-	draw(dx, dy, f, sf, mx, my) {
-		fill(this.state ? Checkbox.BACKGROUND_ON : Checkbox.BACKGROUND_OFF);
-		stroke(this.isOver(dx, dy, f, sf, mx, my) ? Checkbox.STROKE_HOVER : Checkbox.STROKE_NORMAL);
+	draw(state, dx, dy, f, sf, mx, my) {
+		fill(state ? Led.BACKGROUND_ON : Led.BACKGROUND_OFF);
+		stroke(this.isOver(dx, dy, f, sf, mx, my) ? Led.STROKE_HOVER : Led.STROKE_NORMAL);
 		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), this.getSize(sf), this.getSize(sf));
 
-		fill(this.state ? Checkbox.TEXT_ON : Checkbox.TEXT_OFF);
+		fill(state ? Led.TEXT_ON : Led.TEXT_OFF);
 		text(this.label, this.getPosX(dx, f), this.getPosY(dy, f));
 	}
 }

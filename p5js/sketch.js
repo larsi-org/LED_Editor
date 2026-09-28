@@ -142,7 +142,7 @@ async function loadLayout(name) {
 // way)
 function applyLayoutData(name, data) {
 	directory = name;
-	leds = data.leds.map((led, i) => new Checkbox(String(i + 1), led.x, led.y, led.r, false));
+	leds = data.leds.map((led, i) => new Led(String(i + 1), led.x, led.y, led.r));
 	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
@@ -178,7 +178,7 @@ function drawLEDs(dx, dy, a, currentFrame, viewZoom, viewPanX, viewPanY) {
 	drawingContext.clip();
 
 	// position transform: dx/dy shift by the pan, f scales by the zoom - spreading LEDs
-	// apart from each other as you zoom in. Composing this with Checkbox.getPosX/Y's own
+	// apart from each other as you zoom in. Composing this with Led.getPosX/Y's own
 	// dx + f*posX reduces to exactly the same zoom-to-cursor formula
 	// lib/larsi.org/point-cloud-renderer-2d.js's project() uses ((pos - center) * zoom +
 	// center + pan) - it simplifies this far because dx/dy already *are* that center
@@ -207,8 +207,7 @@ function drawLEDs(dx, dy, a, currentFrame, viewZoom, viewPanX, viewPanY) {
 	// level (see buildCube's depth-skew comment). Flat layouts (Circle/Hex/Matrix, non-cube
 	// checked-in files) have no such depth axis, so draw order is a no-op for them either way.
 	for (let i = leds.length - 1; i >= 0; i--) {
-		leds[i].setState(states[currentFrame][i]);
-		leds[i].draw(cdx, cdy, cf, sf, mouseX, mouseY);
+		leds[i].draw(states[currentFrame][i], cdx, cdy, cf, sf, mouseX, mouseY);
 	}
 
 	pop(); // otherwise the next drawLEDs() call stays clipped to this one's rect
@@ -221,8 +220,8 @@ function drawLEDs(dx, dy, a, currentFrame, viewZoom, viewPanX, viewPanY) {
 // nothing. Local coordinates (the buffer is its own tiny canvas, not positioned within the
 // main one) - draw() places the result with image() instead. No wires (see the "not worth
 // reading at that size" note this replaced) and no stroke/label/hover, matching what
-// Checkbox.draw() used to skip in its old icon-mode branch - just plain filled circles, using
-// Checkbox's own position/size math directly rather than its draw() method.
+// Led.draw() used to skip in its old icon-mode branch - just plain filled circles, using
+// Led's own position/size math directly rather than its draw() method.
 function renderThumb(ti) {
 	const g = createGraphics(THUMB_SIZE, THUMB_SIZE);
 	const c = THUMB_SIZE / 2;
@@ -236,7 +235,7 @@ function renderThumb(ti) {
 
 	g.noStroke();
 	for (let i = leds.length - 1; i >= 0; i--) {
-		g.fill(states[ti][i] ? Checkbox.BACKGROUND_ON : Checkbox.BACKGROUND_OFF);
+		g.fill(states[ti][i] ? Led.BACKGROUND_ON : Led.BACKGROUND_OFF);
 		const size = leds[i].getSize(f);
 		g.ellipse(leds[i].getPosX(c, f), leds[i].getPosY(c, f), size, size);
 	}

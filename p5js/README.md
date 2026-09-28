@@ -6,8 +6,8 @@ to paste into Arduino firmware. Originally a port of a Processing sketch, but
 the Processing version was removed once this one had full feature parity -
 this is now the only editor in the repo.
 
-Only the LED grid itself is drawn on `<canvas>` (`checkbox.js`'s `Checkbox`
-class) - the toolbar (layout picker, frame nav, clipboard, generate, ...) is
+Only the LED grid itself is drawn on `<canvas>` (`led.js`'s `Led` class) -
+the toolbar (layout picker, frame nav, clipboard, generate, ...) is
 real HTML in `index.html`, each button wired straight to `executeKey()` in
 `sketch.js`. That used to all be canvas-drawn too (a literal port of
 Processing's button-widget classes, which don't exist in the browser's DOM),
@@ -17,7 +17,7 @@ free, and don't need per-frame hit-testing against the mouse position.
 
 Must be served over HTTP, not opened directly as a `file://` URL (browsers
 block `fetch()` of local files). `index.html` loads the built
-`dist/led-editor.min.js` (see "Building" below), not `sketch.js`/`checkbox.js`
+`dist/led-editor.min.js` (see "Building" below), not `sketch.js`/`led.js`
 directly, so run `npm run build` after editing either before testing in the
 browser. From the repo root:
 
@@ -35,7 +35,7 @@ npm install
 npm run build
 ```
 
-Concatenates `checkbox.js`, `builders/common.js`, each `builders/*.js` (in
+Concatenates `led.js`, `builders/common.js`, each `builders/*.js` (in
 the order `package.json`'s `build` script lists them - `common.js` has to
 come before the others, since each one calls `registerBuilder()` at its own
 top level, immediately on load), and `sketch.js` last, then minifies the
@@ -85,7 +85,7 @@ link (see below).
 ## Layout
 
 - `index.html` / `style.css` - the toolbar and page chrome
-- `sketch.js` / `checkbox.js` - the app shell (canvas, rendering, pan/zoom,
+- `sketch.js` / `led.js` - the app shell (canvas, rendering, pan/zoom,
   animation state, keyboard/mouse handling) and the LED grid's canvas drawing
 - `builders/common.js` - the shared `{id, label, createControls(), build()}`
   registry every live builder below registers into, small DOM-building
@@ -310,7 +310,7 @@ Mostly useful for a dense **Cube (Custom)** or **Hex (Custom)** build (N=8
 cube is 512 LEDs, N=13 hex is 469) where LEDs overlap too much at the
 default zoom to click the one you mean. Zoom only spreads LEDs apart from
 each other - it deliberately does **not** also enlarge the circles
-themselves (`Checkbox.draw()`/`isOver()` take separate position and size
+themselves (`Led.draw()`/`isOver()` take separate position and size
 scale factors, and `drawLEDs()` only zooms the position one). A uniform
 zoom would leave LEDs exactly as hard to tell apart as before, just
 bigger; more space *between* them is the actual fix. Content is clipped to
