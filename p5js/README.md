@@ -89,11 +89,12 @@ link (see below).
   animation state, keyboard/mouse handling) and the LED grid's canvas drawing
 - `builders/common.js` - the shared `{id, label, createControls(), build()}`
   registry every live builder below registers into, small DOM-building
-  helpers, and the symmetry math more than one builder shares
-  (`computeSymmetry`, `computeRadialSymmetry`)
-- `builders/circle.js` / `hex.js` / `matrix.js` / `cube.js` - one file per
-  live "(Custom)" builder in the Layout dropdown, each owning its own
-  geometry *and* its own toolbar controls (see "Adding a new builder" below)
+  helpers, and the geometry/symmetry math more than one builder shares
+  (`computeSymmetry`, `computeRadialSymmetry`, `collinearLines`)
+- `builders/circle.js` / `hex.js` / `matrix.js` / `cube.js` / `triangle.js` -
+  one file per live "(Custom)" builder in the Layout dropdown, each owning
+  its own geometry *and* its own toolbar controls (see "Adding a new
+  builder" below)
 - `dist/led-editor.min.js` - built from all of those (see "Building" below);
   `index.html` loads this, not the source files directly
 - `layouts/<name>.json` - one file per supported LED layout, fetched at
@@ -219,13 +220,31 @@ first) specifically so the nearer one always wins that overlap instead of
 the farther one painting over it. See also "Pan & zoom" below, which helps
 more the bigger N gets.
 
-## Symmetry, for the four builders
+## Triangle (Custom)
 
-None of the four save anything to a file on their own - use **Export
-Layout** (`e`) to grab one yourself. Circle/Hex/Matrix all compute
+Builds an equilateral triangle live, flat side down and point up: row 0
+(the base, N LEDs) is built first, left to right, then each row up has one
+fewer LED, ending with the single apex LED - N(N+1)/2 LEDs total (a
+triangular number). N from 2 to 20. **Zigzag** works the same way as
+Hex/Matrix's - on by default.
+
+Same triangular-lattice pitch as Hex (`dy = sqrt(0.75) * dx`), but centered
+on the shape's actual *centroid*, not its bounding box - an equilateral
+triangle's centroid sits 1/3 of the way up from its base, not halfway,
+since the base has two vertices pulling the average toward it and the apex
+only one. This matters beyond just looking right: centering there instead
+of at the bounding-box middle is what makes the symmetry below come out
+exact (verified numerically - centering on the bounding box only
+reproduces the same point set under 120° rotation by accident, at one
+single N, not in general).
+
+## Symmetry, for the five builders
+
+None of the five save anything to a file on their own - use **Export
+Layout** (`e`) to grab one yourself. Circle/Hex/Matrix/Triangle all compute
 `symmetry` (see "Layout file format" below) from the shape's actual
 geometry, not its row/column/ring index, so it's already correct under
-Hex/Matrix's Zigzag without needing to special-case it - the same
+Hex/Matrix/Triangle's Zigzag without needing to special-case it - the same
 principle `create_hex_circle.py` used to follow (matching real
 coordinates, not array position) before it was replaced by this. Cube
 doesn't: a physical cube's real symmetry group acts on its 3D level/row/
@@ -245,6 +264,13 @@ simple 2D transform of the projected (x, y) - same reason the checked-in
   and both 90° rotations, since only then does swapping the two axes map
   the grid back onto itself ("n×n has the most symmetry, n×m loses half,
   1×n keeps only first↔last, second↔second-to-last, ...").
+- **Triangle**: the full 6-element dihedral group D3 - 3 rotations (0°/
+  120°/240° about the centroid) each optionally paired with a mirror
+  across the vertical axis through the apex. A size-N triangular grid is
+  exactly the barycentric-coordinate points `(i, j, k)` with
+  `i + j + k = N - 1`, `i/j/k >= 0`, and a 120° rotation permutes those
+  three coordinates cyclically - which is exactly what preserves that
+  constraint, so the symmetry holds at every N, not just special cases.
 
 ## Layout file format
 
