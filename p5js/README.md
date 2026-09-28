@@ -387,6 +387,10 @@ the toolbar's **Symmetry** checkbox (on by default), or right-click, to
 toggle just that one LED. Random respects the checkbox too; right-click
 always ignores symmetry regardless of it.
 
+Click a thumbnail to jump straight to that frame - same result as stepping
+to it with `,`/`.`. The current frame's thumbnail is outlined so it's
+always clear which one the main view is showing.
+
 - `,` / `.` - previous / next frame
 - `[` / `]` - insert a blank frame before / after the current one
 - Delete - remove the current frame

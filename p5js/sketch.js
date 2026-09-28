@@ -63,6 +63,7 @@ const BACKGROUND      = cssVar('--bg-canvas');
 const FILL_BACKGROUND = cssVar('--bg-canvas-fill');
 const STROKE_DIV      = cssVar('--accent');
 const STROKE_WIRE     = cssVar('--wire');
+const THUMB_ACTIVE    = cssVar('--border-button-hover'); // same blue the toolbar buttons highlight with on hover
 
 const DIM  = 800;
 const DIM2 = DIM / 2;
@@ -142,6 +143,15 @@ function resetView() {
 
 function inMainView(x, y) {
 	return x >= 0 && x < DIM && y >= 0 && y < DIM;
+}
+
+// Frame index of the thumbnail grid cell at (x, y), or -1 if it's outside the grid entirely
+// or over a cell past the last real frame (the grid is always a full 8 columns wide, but the
+// last row can be partially empty - see draw()'s own thumbnail loop).
+function thumbIndexAt(x, y) {
+	if (x < 0 || x >= DIM || y < THUMB_TOP) return -1;
+	const ti = Math.floor(x / THUMB_SIZE) + 8 * Math.floor((y - THUMB_TOP) / THUMB_SIZE);
+	return ti < states.length ? ti : -1;
 }
 
 // Same dx/dy/f/size drawLEDs() actually draws the main view with, for hit-testing at the
@@ -324,14 +334,26 @@ function draw() {
 	updateCanvasHeight();
 
 	// thumbnails, 8 wide, up to 8 rows - cached per frame (see renderThumb()), only actually
-	// redrawn when that frame's own content changes, not every p5 frame
+	// redrawn when that frame's own content changes, not every p5 frame. The active frame's
+	// highlight border is drawn fresh on top every p5 frame instead of baked into the cache -
+	// cheap (one rect), and means switching frames never has to invalidate/re-render either
+	// thumbnail's cached LED content just to move the highlight.
 	const rows = Math.min(8, Math.ceil(states.length / 8));
 	for (let ty = 0; ty < rows; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
 			const ti = tx + 8 * ty;
 			if (ti < states.length) {
+				const tlx = tx * THUMB_SIZE;
+				const tly = THUMB_TOP + ty * THUMB_SIZE;
 				const g = thumbCache[ti] || renderThumb(ti);
-				image(g, tx * THUMB_SIZE, THUMB_TOP + ty * THUMB_SIZE);
+				image(g, tlx, tly);
+				if (ti === current) {
+					noFill();
+					stroke(THUMB_ACTIVE);
+					strokeWeight(3);
+					rect(tlx + 2, tly + 2, THUMB_SIZE - 4, THUMB_SIZE - 4);
+					strokeWeight(1); // restore the default - drawLEDs()'s wires/LED outlines below assume it
+				}
 			}
 		}
 	}
@@ -509,6 +531,12 @@ function mouseReleased() {
 	const wasPan = dragging && dragDistance > 4;
 	dragging = false;
 	if (wasPan) return; // a real drag pans the view - don't also toggle whatever's under the cursor
+
+	const ti = thumbIndexAt(mouseX, mouseY);
+	if (ti >= 0) {
+		current = ti;
+		return;
+	}
 
 	const { dx, dy, f, size } = mainViewProjection();
 	if (mouseButton === LEFT) {
