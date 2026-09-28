@@ -3,31 +3,36 @@
 
 const DATA_BASE = 'layouts/';
 
-// led_* files are all real hardware, kept checked in instead of rebuilt live each time
-const LAYOUTS = [
-	{ value: 'cube3',     label: 'Cube3 (LED Cube3)' },
+// Real-hardware layouts that need a checked-in file instead of a live builder - empty for
+// now. Every file that used to live here (cube3/hex3/hex10/led_6x5/led_7x7/led_5x1/led_8x1/
+// led_20x1/led_25x25) turned out to be either an exact match for its builder's live output,
+// or (cube3 specifically) close enough that Lars chose the builder as the more useful single
+// source going forward rather than keeping a slightly-different cached file around - so as of
+// 2026-09-28 every real-hardware project page links in via ?builder= instead (see
+// larsi-org/html's own repo for those pages, and this repo's README for the comparison this
+// session ran). The files were deleted rather than left as unused duplicates - this array,
+// DATA_BASE, and loadLayout() below all stay fully wired up and ready for whenever a genuinely
+// hand-edited layout (one no builder can reproduce) needs one again: add an entry here and
+// drop the file in layouts/.
+const LAYOUTS = [];
 
-	{ value: 'hex3',      label: 'Hex3 (ATtinyX5 hex3)' },
-	{ value: 'hex10',     label: 'Hex10 (Schneeflocke)' },
+// Landing view when neither ?layout= nor ?builder= is given at all - reproduces exactly what
+// the last checked-in default (hex10.json, Schneeflocke) used to show, now that it's just Hex
+// (Custom) at these params rather than a cached file.
+const DEFAULT_BUILDER_ID = '__hex__';
+const DEFAULT_BUILDER_PARAMS = { count: '10', zigzag: true };
 
-	{ value: 'led_6x5',   label: '6×5 (LED 6×5)' },
-	{ value: 'led_7x7',   label: '7×7 (LED Coffee Table)' },
-	{ value: 'led_5x1',   label: '5×1 (LED5)' },
-	{ value: 'led_8x1',   label: '8×1 (LED8)' },
-	{ value: 'led_20x1',  label: '20×1 (ATtinyX5 led20)' },
-	{ value: 'led_25x25', label: '25×25 (Peggy 2LE)' }
-];
-
-let directory = 'hex10';
+let directory = '';
 
 // Two ways a project page can land directly on a specific layout instead of making the
 // visitor pick it from the dropdown themselves - both read straight off the URL client-side,
 // no server involvement needed:
 //
 // ?layout=<name>.json - a real checked-in layouts/*.json file (e.g. ?layout=led_7x7.json).
-// Still the only way to land on a hand-edited layout with no live builder able to reproduce
-// it, or one that's drifted from what its builder would currently produce - real files stay
-// authoritative, so this wins if both params are somehow present.
+// The only way to land on a hand-edited layout with no live builder able to reproduce it, or
+// one that's drifted from what its builder would currently produce - real files stay
+// authoritative, so this wins if both params are somehow present. LAYOUTS is empty right now
+// (see above), but the mechanism itself stays fully wired up for whenever one is needed again.
 //
 // ?builder=<name>&count=<n>[&zigzag=<0|1>] (or &countX=/&countY= for Matrix's two dimensions)
 // - builds live at load time instead, straight from these params, the same as clicking that
@@ -38,10 +43,6 @@ let directory = 'hex10';
 const urlParams = new URLSearchParams(window.location.search);
 const layoutParam = urlParams.get('layout');
 const builderParam = urlParams.get('builder');
-
-if (layoutParam && /^[\w-]+\.json$/.test(layoutParam)) {
-	directory = layoutParam.replace(/\.json$/, '');
-}
 
 // Undefined (not present in the URL at all) lets a builder's own build(params) fall back to
 // its toolbar default via ?? - only an explicit zigzag=0/1 (or true/false) should override it.
@@ -78,7 +79,7 @@ const THUMB_SIZE = 100; // one thumbnail's on-canvas footprint, width == height
 // LEDs
 let leds = [];
 
-// Lines (only cube3 has any)
+// Lines - Cube/Hex/Matrix/Triangle all generate these; Circle doesn't
 let ledLines = [];
 
 // symmetry[i] is the next LED in i's symmetry cycle (i itself if none)
@@ -156,15 +157,21 @@ function setup() {
 	populateLayoutSelect();
 	wireToolbar();
 
-	// ?layout= (already resolved into `directory` above) takes priority if present; otherwise
-	// try ?builder=, falling back to the plain file load if it doesn't name a real builder
-	// (covers both "no ?builder= at all" and a misspelled one, same as an invalid ?layout=
-	// already silently falls back today since its regex just won't match).
-	const builder = !layoutParam && builderParam && BUILDERS.find((b) => b.id === `__${builderParam}__`);
+	// ?layout= wins if present and valid (a real checked-in file - LAYOUTS is empty right now,
+	// see its own comment, but the mechanism stays ready). Otherwise ?builder=, if it names a
+	// real builder. Otherwise the default landing view (see DEFAULT_BUILDER_ID/_PARAMS above) -
+	// this also covers a misspelled ?builder= value, the same way an invalid ?layout= already
+	// falls through its own regex check below.
+	if (layoutParam && /^[\w-]+\.json$/.test(layoutParam)) {
+		loadLayout(layoutParam.replace(/\.json$/, ''));
+		return;
+	}
+
+	const builder = builderParam && BUILDERS.find((b) => b.id === `__${builderParam}__`);
 	if (builder) {
 		selectBuilder(builder, parseBuilderParams(urlParams));
 	} else {
-		loadLayout(directory);
+		selectBuilder(BUILDERS.find((b) => b.id === DEFAULT_BUILDER_ID), DEFAULT_BUILDER_PARAMS);
 	}
 }
 
