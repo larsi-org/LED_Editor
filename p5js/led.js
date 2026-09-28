@@ -32,8 +32,8 @@ class Led {
 
 	// No size/radius field - every LED in a layout always shares the same radius (see
 	// sketch.js's own radius variable, read from the layout's one top-level r), so there's
-	// nothing per-instance to store here either; getSize()/isOver()/draw() all take it as a
-	// plain parameter instead, same as they already do for f/sf.
+	// nothing per-instance to store here either; isOver()/draw() take it as a plain parameter
+	// instead, same as they already do for f/sf.
 	constructor(label, posX, posY) {
 		this.label = label;
 		this.posX  = posX;
@@ -48,10 +48,6 @@ class Led {
 		return Math.round(dy + f * this.posY);
 	}
 
-	getSize(f, r) {
-		return Math.round(f * r);
-	}
-
 	// f positions the LED (spacing between LEDs); sf sizes it (circle diameter) - these are
 	// the same value everywhere except the main view while it's zoomed, where f grows with
 	// the zoom (spreading LEDs apart) but sf deliberately doesn't (see drawLEDs()'s own
@@ -62,7 +58,7 @@ class Led {
 	isOver(dx, dy, f, sf, r, mx, my) {
 		const x = mx - this.getPosX(dx, f);
 		const y = my - this.getPosY(dy, f);
-		const rad = this.getSize(sf, r) / 2;
+		const rad = Math.round(sf * r) / 2;
 		return x * x + y * y <= rad * rad;
 	}
 
@@ -75,9 +71,10 @@ class Led {
 	// the main, interactive view now, so there's no more icon-mode branch to skip
 	// stroke/hover/label for.
 	draw(state, dx, dy, f, sf, r, mx, my) {
+		const size = Math.round(sf * r);
 		fill(Led.backgroundColor(state));
 		stroke(Led.strokeColor(this.isOver(dx, dy, f, sf, r, mx, my)));
-		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), this.getSize(sf, r), this.getSize(sf, r));
+		ellipse(this.getPosX(dx, f), this.getPosY(dy, f), size, size);
 
 		fill(Led.textColor(state));
 		text(this.label, this.getPosX(dx, f), this.getPosY(dy, f));

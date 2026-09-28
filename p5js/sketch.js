@@ -85,7 +85,7 @@ let ledLines = [];
 // Every LED in a layout always shares one radius (normalized to the same [-1, 1] scale as
 // posX/posY) - no builder, and no checked-in layout before they were all deleted, has ever
 // varied it per LED - so this lives once here instead of once per Led instance (see led.js's
-// own comment on why its constructor/getSize()/isOver()/draw() dropped the field entirely).
+// own comment on why its constructor dropped the field entirely).
 let radius = 0.1;
 
 // symmetry[i] is the next LED in i's symmetry cycle (i itself if none)
@@ -286,9 +286,9 @@ function renderThumb(ti) {
 	g.rect(c - a, c - a, 2 * a, 2 * a);
 
 	g.noStroke();
+	const size = Math.round(f * radius);
 	for (let i = leds.length - 1; i >= 0; i--) {
 		g.fill(Led.backgroundColor(states[ti][i]));
-		const size = leds[i].getSize(f, radius);
 		g.ellipse(leds[i].getPosX(c, f), leds[i].getPosY(c, f), size, size);
 	}
 
