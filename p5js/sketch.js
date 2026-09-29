@@ -303,7 +303,7 @@ function invalidateCurrentThumb() {
 
 // executeKey()'s '['/']'/Delete cases need thumbCache kept in the exact same shape as
 // states - a frame that didn't change content still needs its cached image relocated to its
-// new index, and a newly-inserted blank frame starts with no cache at all (same as any other
+// new index, and a newly-inserted frame starts with no cache at all (same as any other
 // invalidated frame - rendered lazily next time it's actually visible).
 function insertFrame(atIndex, frame) {
 	states.splice(atIndex, 0, frame);
@@ -402,12 +402,12 @@ function executeKey(key) {
 		case '.': // next frame
 			current = current < states.length - 1 ? current + 1 : 0;
 			break;
-		case '[': // insert a frame before the current frame
-			insertFrame(current, leds.map(() => false));
+		case '[': // duplicate the current frame before itself (own copy - the clipboard is untouched)
+			insertFrame(current, states[current].slice());
 			break;
-		case ']': // insert a frame after the current frame
+		case ']': // duplicate the current frame after itself
 			current++;
-			insertFrame(current, leds.map(() => false));
+			insertFrame(current, states[current - 1].slice());
 			break;
 		case 'Delete':
 		case 'Backspace': // delete current frame

@@ -409,7 +409,7 @@ to it with `,`/`.`. The current frame's thumbnail is outlined so it's
 always clear which one the main view is showing.
 
 - `,` / `.` - previous / next frame
-- `[` / `]` - insert a blank frame before / after the current one
+- `[` / `]` - duplicate the current frame before / after itself (the copy becomes current; the clipboard is untouched)
 - Delete - remove the current frame
 - `c` / `v` - copy / paste the current frame
 - Space - clear the current frame
