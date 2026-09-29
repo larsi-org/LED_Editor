@@ -105,11 +105,9 @@ let thumbCache = [];
 // blitting a full ImageData buffer, whereas this sketch already redraws every p5 frame and
 // draws circles/lines/text, not pixels - only the gesture *math* carries over, the same
 // reasoning Mandelbrot's own hand-rolled zoom used (see CLAUDE.md's
-// point-cloud-renderer-architecture note). Touch: p5's touch-to-mouse simulation
-// gives single-finger drag-to-pan and tap-to-toggle for free as long as no touchStarted/
-// touchMoved/touchEnded are defined, so pinch (and double-tap reset, since claiming the touch
-// below suppresses the browser's own dblclick) is layered on with plain touch listeners on
-// the canvas - see wireTouchGestures().
+// point-cloud-renderer-architecture note). Touch: handled entirely by plain touch listeners on
+// the canvas (tap toggles, one finger pans, two fingers pinch-zoom, double-tap on empty space
+// resets) - see wireTouchGestures().
 let viewZoom = 1, viewPanX = 0, viewPanY = 0;
 const clampViewZoom = (z) => Math.max(0.5, Math.min(40, z));
 
@@ -541,13 +539,14 @@ let dragging = false;
 let dragDistance = 0;
 
 function mousePressed() {
+	if (mainTouch) return; // touches that begin in the main square are handled by wireTouchGestures()
 	if (leds.length === 0 || !inMainView(mouseX, mouseY)) return;
 	dragging = true;
 	dragDistance = 0;
 }
 
 function mouseDragged() {
-	if (!dragging || pinchLock) return;
+	if (!dragging || mainTouch) return;
 	viewPanX += mouseX - pmouseX;
 	viewPanY += mouseY - pmouseY;
 	dragDistance += Math.abs(mouseX - pmouseX) + Math.abs(mouseY - pmouseY);
@@ -565,17 +564,21 @@ function mouseWheel(event) {
 	return false;
 }
 
-// Two-finger pinch zoom (about the midpoint, which also pans as the fingers travel) and
-// double-tap reset for the main view. Runs on the canvas element itself, ahead of p5's own
-// window-level touch listeners, so touchCount/pinchLock are already current when p5's
-// simulated mousePressed/mouseDragged/mouseReleased fire for the same event. pinchLock stays
-// set until every finger is up, so the finger left over when one lifts doesn't start a pan or
-// toggle an LED. A touch that begins in the main square is claimed (preventDefault) so the
-// page doesn't scroll or zoom under it; touches that begin on the thumbnails still scroll.
-let pinchLock = false;
-let touchCount = 0;
-let pinchStart = null; // { dist, zoom, mx, my } while two fingers are down
-let lastTap = null;    // { t, x, y } of the previous single-finger tap in the main square
+// Touch gestures for the main view, handled here start to finish rather than through p5's
+// simulated mouse events: one finger pans (or, if it barely moved, taps an LED), two fingers
+// pinch-zoom about their midpoint (and pan with it). Claiming the touch with preventDefault
+// keeps the page from scrolling/zooming under it - which also suppresses the browser's
+// emulated mouse events, hence handling the tap ourselves. mainTouch makes p5's own
+// mousePressed/Dragged/Released ignore everything from the gesture (p5's window-level touch
+// listeners run right after these canvas-level ones, for the same event) until every finger
+// is up. Touches that begin outside the main square (thumbnails) aren't claimed at all: they
+// still scroll, and their emulated mouse events select a frame as before.
+let mainTouch = false;
+let touchPan = null;    // { x, y, dist } - last position of the one finger, while it's the only one
+let touchMoved = 0;     // total travel of this gesture, to tell a tap from a pan
+let touchMulti = false; // a second finger joined: this gesture is never a tap
+let pinchStart = null;  // { dist, zoom, mx, my } while two fingers are down
+let lastEmptyTap = null; // { t, x, y } - a tap on empty space; a second one nearby resets the view
 
 function wireTouchGestures(el) {
 	const pos = (t) => {
@@ -589,42 +592,64 @@ function wireTouchGestures(el) {
 	};
 
 	el.addEventListener('touchstart', (e) => {
-		touchCount = e.touches.length;
-		const p = pos(e.touches[0]);
-		if (inMainView(p.x, p.y) && e.cancelable) e.preventDefault();
-		if (touchCount === 2 && inMainView(p.x, p.y)) {
-			pinchLock = true;
-			dragging = false;
+		if (leds.length === 0) return;
+		if (e.touches.length === 1) {
+			const p = pos(e.touches[0]);
+			if (!inMainView(p.x, p.y)) return; // thumbnails etc: leave to the browser and p5
+			mainTouch = true;
+			touchMulti = false;
+			touchMoved = 0;
+			touchPan = p;
+		} else if (!mainTouch) {
+			return;
+		} else if (e.touches.length === 2) {
+			touchMulti = true;
+			touchPan = null;
 			pinchStart = { ...pinchState(e), zoom: viewZoom };
 		}
+		if (e.cancelable) e.preventDefault();
 	}, { passive: false });
 
 	el.addEventListener('touchmove', (e) => {
-		if (!pinchStart || e.touches.length < 2) return;
+		if (!mainTouch) return;
 		if (e.cancelable) e.preventDefault();
-		const cur = pinchState(e);
-		viewPanX += cur.mx - pinchStart.mx;
-		viewPanY += cur.my - pinchStart.my;
-		zoomViewAt(cur.mx, cur.my, pinchStart.zoom * cur.dist / pinchStart.dist);
-		pinchStart.mx = cur.mx;
-		pinchStart.my = cur.my;
+		if (pinchStart && e.touches.length >= 2) {
+			const cur = pinchState(e);
+			viewPanX += cur.mx - pinchStart.mx;
+			viewPanY += cur.my - pinchStart.my;
+			zoomViewAt(cur.mx, cur.my, pinchStart.zoom * cur.dist / pinchStart.dist);
+			pinchStart.mx = cur.mx;
+			pinchStart.my = cur.my;
+		} else if (touchPan && e.touches.length === 1) {
+			const p = pos(e.touches[0]);
+			viewPanX += p.x - touchPan.x;
+			viewPanY += p.y - touchPan.y;
+			touchMoved += Math.abs(p.x - touchPan.x) + Math.abs(p.y - touchPan.y);
+			touchPan = p;
+		}
 	}, { passive: false });
 
 	const end = (e) => {
-		touchCount = e.touches.length;
-		if (touchCount < 2) pinchStart = null;
-		// double-tap: a still, single-finger tap in the main square within 300ms of the last one
-		if (touchCount === 0 && !pinchLock && dragDistance <= 4 && e.changedTouches.length === 1) {
-			const p = pos(e.changedTouches[0]);
-			if (inMainView(p.x, p.y)) {
-				const now = Date.now();
-				if (lastTap && now - lastTap.t < 300 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 30) {
-					resetView();
-					lastTap = null;
-				} else {
-					lastTap = { t: now, x: p.x, y: p.y };
-				}
-			}
+		if (!mainTouch) return;
+		if (e.touches.length < 2) pinchStart = null;
+		if (e.touches.length > 0) return; // wait for the last finger
+		const wasTap = !touchMulti && touchMoved <= 4 && e.type === 'touchend' && touchPan;
+		const p = touchPan;
+		touchPan = null;
+		// p5's own handlers for this same event run right after us and still need to see
+		// mainTouch set - clear it once the event has finished dispatching
+		setTimeout(() => { mainTouch = false; }, 0);
+		if (!wasTap) return;
+		if (clickMainAt(p.x, p.y, false)) {
+			lastEmptyTap = null;
+			return;
+		}
+		const now = Date.now();
+		if (lastEmptyTap && now - lastEmptyTap.t < 300 && Math.hypot(p.x - lastEmptyTap.x, p.y - lastEmptyTap.y) < 30) {
+			resetView(); // double-tap on empty space
+			lastEmptyTap = null;
+		} else {
+			lastEmptyTap = { t: now, x: p.x, y: p.y };
 		}
 	};
 	el.addEventListener('touchend', end);
@@ -634,11 +659,7 @@ function wireTouchGestures(el) {
 function mouseReleased() {
 	if (leds.length === 0) return;
 
-	if (pinchLock) { // the simulated mouse events of a two-finger pinch - not a pan or a toggle
-		dragging = false;
-		if (touchCount === 0) pinchLock = false;
-		return;
-	}
+	if (mainTouch) return; // see mousePressed()
 
 	const startedInMain = dragging; // mousePressed() only sets this for a press inside the main square
 	const wasPan = dragging && dragDistance > 4;
@@ -657,19 +678,25 @@ function mouseReleased() {
 	// have to be inside the main square.
 	if (!startedInMain || !inMainView(mouseX, mouseY)) return;
 
+	clickMainAt(mouseX, mouseY, mouseButton === RIGHT);
+}
+
+// Toggles whatever LED(s) lie under (x, y) in the main view - left click toggles with symmetry,
+// right click just the one LED. Returns whether anything was under the point.
+function clickMainAt(x, y, single) {
 	const { dx, dy, f, size } = mainViewProjection();
-	if (mouseButton === LEFT) {
-		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, size, mouseX, mouseY)) toggleLED(i);
-		}
-	} else if (mouseButton === RIGHT) {
-		for (let i = 0; i < leds.length; i++) {
-			if (leds[i].isOver(dx, dy, f, size, mouseX, mouseY)) {
-				states[current][i] = !states[current][i];
-				invalidateCurrentThumb();
-			}
+	let hit = false;
+	for (let i = 0; i < leds.length; i++) {
+		if (!leds[i].isOver(dx, dy, f, size, x, y)) continue;
+		hit = true;
+		if (single) {
+			states[current][i] = !states[current][i];
+			invalidateCurrentThumb();
+		} else {
+			toggleLED(i);
 		}
 	}
+	return hit;
 }
 
 function updateToolbarUI() {
