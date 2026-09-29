@@ -175,9 +175,9 @@ gallery tile for the editor links with no params at all, since it's the
 tool's generic entry point, not tied to one project.)
 
 No generator scripts anymore, and no checked-in layout files either -
-**Circle (Custom)**, **Hex (Custom)**, **Matrix (Custom)**, **Cube
-(Custom)**, and **Triangle (Custom)** in the Layout dropdown build any
-size live (see below). Every project page below that links to a Matrix
+**Circle (Custom)**, **Hex (Custom)**, **Matrix (Custom)**, **Strip
+(Custom)**, **Cube (Custom)**, and **Triangle (Custom)** in the Layout
+dropdown build any size live (see below). Every project page below that links to a Matrix
 (Custom) build (project pages named `led_*`, from when these were still
 checked-in files with that naming convention) -
 [LED 6x5 Shield](https://larsi.org/make/led_6x5)
@@ -247,6 +247,15 @@ Both axes share one pitch (the larger dimension sets it), so LEDs are
 evenly spaced even when width and height differ, rather than stretched to
 fill a square. Wire lines are drawn across every row and down every column.
 
+## Strip (Custom)
+
+Builds a single straight line of N LEDs - literally `buildMatrix(N, 1,
+false)` under the hood (a 1-row Matrix is already exactly this: evenly
+spaced, one line straight across, zigzag a no-op with only one row), just
+exposed as its own builder with a single N control (1-32) instead of
+Matrix's W/H pair, and its own `?builder=strip&count=..` URL param instead
+of spelling out `countX=N&countY=1`.
+
 ## Cube (Custom)
 
 Builds an N×N×N cube live: N levels stacked top to bottom, each level an
@@ -264,7 +273,7 @@ reproduces that original layout's LED positions exactly (still true, just
 no longer checkable against a live file) - only its LED radius differs
 (`r=0.1` here, matching every other builder, vs that layout's own
 `r=0.15`). No Zigzag option (a cube's real wiring order is a whole
-separate problem - see "Symmetry, for the five builders" below for why
+separate problem - see "Symmetry, for the six builders" below for why
 this one skips symmetry too).
 
 Within a level, a farther-away row (see `buildCube`'s own comment on which
@@ -292,11 +301,11 @@ exact (verified numerically - centering on the bounding box only
 reproduces the same point set under 120° rotation by accident, at one
 single N, not in general).
 
-## Symmetry, for the five builders
+## Symmetry, for the six builders
 
-None of the five save anything to a file on their own - use **Export
-Layout** (`e`) to grab one yourself. Circle/Hex/Matrix/Triangle all compute
-`symmetry` (see "Layout file format" below) from the shape's actual
+None of the six save anything to a file on their own - use **Export
+Layout** (`e`) to grab one yourself. Circle/Hex/Matrix/Strip/Triangle all
+compute `symmetry` (see "Layout file format" below) from the shape's actual
 geometry, not its row/column/ring index, so it's already correct under
 Hex/Matrix/Triangle's Zigzag without needing to special-case it - the same
 principle `create_hex_circle.py` used to follow (matching real
@@ -319,6 +328,9 @@ from (see "Cube (Custom)" above) never had a `symmetry` key either.
   and both 90° rotations, since only then does swapping the two axes map
   the grid back onto itself ("n×n has the most symmetry, n×m loses half,
   1×n keeps only first↔last, second↔second-to-last, ...").
+- **Strip**: the same computation as Matrix's, since Strip *is* Matrix
+  with height fixed at 1 - "1×n keeps only first↔last, second↔
+  second-to-last" above.
 - **Triangle**: the full 6-element dihedral group D3 - 3 rotations (0°/
   120°/240° about the centroid) each optionally paired with a mirror
   across the vertical axis through the apex. A size-N triangular grid is
@@ -350,14 +362,14 @@ from (see "Cube (Custom)" above) never had a `symmetry` key either.
   `j = symmetry[j]` until it loops back to `i`, setting each one to `i`'s new
   state - a cycle, not just a pair (hex/circle layouts have up to 12-way
   symmetry near the center, a rectangular grid up to 8-way - see "Symmetry,
-  for the five builders" above). Omitted entirely when no LED has a partner
-  (Cube (Custom) only, among the five live builders).
+  for the six builders" above). Omitted entirely when no LED has a partner
+  (Cube (Custom) only, among the six live builders).
 - `lines` - optional. Each entry is a `[i0, i1]` pair of 0-based LED indices
   to draw a connecting wire between. Cube (Custom) needs it because the
   cube isn't a flat convex shape, so the physical wiring can't be inferred
   just from LED positions the way it can for a flat grid/hex/circle; a
   rectangular grid's rows/columns get one each too (see "Matrix (Custom)"
-  above).
+  above, which Strip (Custom) inherits directly).
 
 ## Pan & zoom
 
