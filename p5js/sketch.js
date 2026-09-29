@@ -570,6 +570,7 @@ function mouseWheel(event) {
 function mouseReleased() {
 	if (leds.length === 0) return;
 
+	const startedInMain = dragging; // mousePressed() only sets this for a press inside the main square
 	const wasPan = dragging && dragDistance > 4;
 	dragging = false;
 	if (wasPan) return; // a real drag pans the view - don't also toggle whatever's under the cursor
@@ -579,6 +580,12 @@ function mouseReleased() {
 		current = ti;
 		return;
 	}
+
+	// p5 sees mouse events on the whole page, and a zoomed-in view's LEDs can lie outside the
+	// square (clipped from view, still hit-testable) - so a click on the toolbar's number
+	// spinners, say, could otherwise toggle an invisible LED under it. Both ends of the click
+	// have to be inside the main square.
+	if (!startedInMain || !inMainView(mouseX, mouseY)) return;
 
 	const { dx, dy, f, size } = mainViewProjection();
 	if (mouseButton === LEFT) {
