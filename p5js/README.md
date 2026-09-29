@@ -1,8 +1,8 @@
 # p5js
 
 A [p5.js](https://p5js.org/) app for laying out LED animation frames by hand:
-click LEDs on/off, step through frames, and export the result as bitmap rows
-to paste into Arduino firmware. Originally a port of a Processing sketch, but
+click LEDs on/off, step through frames, and generate Arduino code (frames as a
+`PROGMEM` string array) to paste into firmware. Originally a port of a Processing sketch, but
 the Processing version was removed once this one had full feature parity -
 this is now the only editor in the repo.
 
@@ -415,8 +415,10 @@ always clear which one the main view is showing.
 - Space - clear the current frame
 - `i` - invert the current frame
 - `r` - flip a random LED (and its symmetric partner, if any)
-- `g` - open a text box with the whole animation (every frame, every LED, as
-  `0`/`1`) and a "Copy to clipboard" button
+- `g` - open a text box with Arduino code for the whole animation: one
+  `PROGMEM` string per frame (one `0`/`1` per LED), a `PROGMEM` table of
+  pointers to them (`frames[]`), `NUM_LEDS`/`NUM_FRAMES`, and an `ledOn(frame, led)`
+  helper - plus a "Copy to clipboard" button
 - `e` - open the same text box with the current layout's own `layouts/*.json`
   contents instead - the only way to keep a layout built with **Circle**,
   **Hex**, or **Matrix (Custom)**, since those are never written to a file

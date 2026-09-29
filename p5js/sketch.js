@@ -431,12 +431,36 @@ function showOutput(title, descHtml, text) {
 	document.getElementById('output').hidden = false;
 }
 
+// Arduino source: one string per frame ('0'/'1' per LED, in the layout's leds order), each
+// kept in flash (PROGMEM) with a PROGMEM table of pointers to them - on AVR a plain
+// `const char* frames[]` would copy every string into scarce RAM, and an array of strings
+// can't itself be PROGMEM-resident without each string being its own PROGMEM array first.
 function generate() {
-	const text = states.map((frame) => frame.map((v) => (v ? '1' : '0')).join('')).join('\n');
+	const n = states.length;
+	const lines = [
+		`// ${leds.length} LEDs, ${n} frame${n === 1 ? '' : 's'} - one string per frame, one '0'/'1' per LED (layout order)`,
+		`const uint16_t NUM_LEDS = ${leds.length};`,
+		`const uint16_t NUM_FRAMES = ${n};`,
+		'',
+	];
+	states.forEach((frame, f) => {
+		lines.push(`const char frame${f}[] PROGMEM = "${frame.map((v) => (v ? '1' : '0')).join('')}";`);
+	});
+	lines.push('', 'const char* const frames[] PROGMEM = {');
+	lines.push(states.map((_, f) => `  frame${f}`).join(',\n'));
+	lines.push(
+		'};',
+		'',
+		'// is LED i lit in frame f?',
+		'bool ledOn(uint16_t f, uint16_t i) {',
+		'  const char* frame = (const char*)pgm_read_ptr(&frames[f]);',
+		"  return pgm_read_byte(frame + i) == '1';",
+		'}'
+	);
 	showOutput(
-		'Generated animation',
-		'One line per frame, one <code>0</code>/<code>1</code> per LED (order matches the layout\'s <code>leds</code> list).',
-		text
+		'Arduino code',
+		'Paste into your sketch. Frames live in flash (<code>PROGMEM</code>); read them with <code>ledOn(frame, led)</code>.',
+		lines.join('\n')
 	);
 }
 
