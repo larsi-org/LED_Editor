@@ -75,14 +75,15 @@ registerBuilder({
 ```
 
 Add the new file to `package.json`'s `build` script (anywhere after
-`builders/common.js`) and that's it - `sketch.js`'s `populateLayoutSelect()`
+`builders/common.js`) and that's it - `builders/common.js`'s own
+`populateBuilderOptions()` (called from `sketch.js`'s `populateLayoutSelect()`)
 picks up every registered builder automatically, in `BUILDERS` order (i.e.
 the order the build script lists them), inserting each one's controls into
 the toolbar right before the `#builders-anchor` marker already in
-`index.html`. Neither that file nor `make/led-editor/index.php` on the site
-ever need editing for a new builder - only for a new *real-hardware* layout
-file, which still needs a row in the Projects table and its own `?layout=`
-link (see below).
+`index.html`. Neither `index.html` nor `make/led-editor/index.php` on the
+site ever need editing for a new builder - only for a new *real-hardware*
+layout file, which still needs a row in the Projects table and its own
+`?layout=` link (see below).
 
 ## Layout
 
