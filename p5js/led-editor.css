@@ -39,6 +39,10 @@
 	background: var(--bg-page);
 	padding: 12px;
 	border-radius: 6px;
+	/* canvas is a fixed 800px (DIM in sketch.js) - hug it instead of stretching the panel
+	   (and the toolbar) across a wide window; the toolbar wraps within this width */
+	box-sizing: border-box;
+	max-width: 824px;
 }
 
 #toolbar {
