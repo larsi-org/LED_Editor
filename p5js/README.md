@@ -251,7 +251,7 @@ fill a square. Wire lines are drawn across every row and down every column.
 Builds a single straight line of N LEDs - literally `buildMatrix(N, 1,
 false)` under the hood (a 1-row Matrix is already exactly this: evenly
 spaced, one line straight across, zigzag a no-op with only one row), just
-exposed as its own builder with a single N control (1-32) instead of
+exposed as its own builder with a single N control (1-32, default 8) instead of
 Matrix's W/H pair, and its own `?builder=strip&count=..` URL param instead
 of spelling out `countX=N&countY=1`.
 
@@ -418,7 +418,10 @@ always clear which one the main view is showing.
 - `g` - open a text box with Arduino code for the whole animation: one
   `PROGMEM` string per frame (one `0`/`1` per LED), a `PROGMEM` table of
   pointers to them (`frames[]`), `NUM_LEDS`/`NUM_FRAMES`, and an `ledOn(frame, led)`
-  helper - plus a "Copy to clipboard" button
+  helper - plus a "Copy to clipboard" button. With **Compact** checked, each
+  frame is instead a `uint8_t` array, 8 LEDs per byte: LED 1 is the lowest bit
+  of the first byte, LED 8 the highest, LED 9 the lowest bit of the second
+  byte, and so on, with the last byte zero-padded
 - `e` - open the same text box with the current layout's own `layouts/*.json`
   contents instead - the only way to keep a layout built with **Circle**,
   **Hex**, or **Matrix (Custom)**, since those are never written to a file

@@ -431,30 +431,50 @@ function showOutput(title, descHtml, text) {
 	document.getElementById('output').hidden = false;
 }
 
-// Arduino source: one string per frame ('0'/'1' per LED, in the layout's leds order), each
-// kept in flash (PROGMEM) with a PROGMEM table of pointers to them - on AVR a plain
-// `const char* frames[]` would copy every string into scarce RAM, and an array of strings
-// can't itself be PROGMEM-resident without each string being its own PROGMEM array first.
+// Arduino source, kept in flash (PROGMEM) with a PROGMEM table of pointers - on AVR a plain
+// `const char* frames[]` would copy every array into scarce RAM, and a table of arrays can't
+// itself be PROGMEM-resident without each array being its own PROGMEM array first.
+// Default: one string per frame, one '0'/'1' char per LED in the layout's leds order.
+// Compact: the same bits packed 8 LEDs per byte, LED 1 = bit 0 (LSB) up to LED 8 = bit 7 (MSB),
+// then LEDs 9-16 in the next byte, and so on; the last byte is zero-padded.
 function generate() {
+	const compact = document.getElementById('compact-toggle').checked;
 	const n = states.length;
+	const bytesPerFrame = Math.ceil(leds.length / 8);
 	const lines = [
-		`// ${leds.length} LEDs, ${n} frame${n === 1 ? '' : 's'} - one string per frame, one '0'/'1' per LED (layout order)`,
+		`// ${leds.length} LEDs, ${n} frame${n === 1 ? '' : 's'} - ` + (compact
+			? `${bytesPerFrame} byte${bytesPerFrame === 1 ? '' : 's'} per frame, 8 LEDs per byte (LED 1 = bit 0), last byte zero-padded`
+			: "one string per frame, one '0'/'1' per LED (layout order)"),
 		`const uint16_t NUM_LEDS = ${leds.length};`,
 		`const uint16_t NUM_FRAMES = ${n};`,
 		'',
 	];
 	states.forEach((frame, f) => {
-		lines.push(`const char frame${f}[] PROGMEM = "${frame.map((v) => (v ? '1' : '0')).join('')}";`);
+		if (!compact) {
+			lines.push(`const char frame${f}[] PROGMEM = "${frame.map((v) => (v ? '1' : '0')).join('')}";`);
+			return;
+		}
+		const bytes = [];
+		for (let b = 0; b < bytesPerFrame; b++) {
+			let v = 0;
+			for (let k = 0; k < 8; k++) if (frame[b * 8 + k]) v |= 1 << k;
+			bytes.push('0x' + v.toString(16).toUpperCase().padStart(2, '0'));
+		}
+		lines.push(`const uint8_t frame${f}[] PROGMEM = { ${bytes.join(', ')} };`);
 	});
-	lines.push('', 'const char* const frames[] PROGMEM = {');
+	lines.push('', `const ${compact ? 'uint8_t' : 'char'}* const frames[] PROGMEM = {`);
 	lines.push(states.map((_, f) => `  frame${f}`).join(',\n'));
 	lines.push(
 		'};',
 		'',
 		'// is LED i lit in frame f?',
 		'bool ledOn(uint16_t f, uint16_t i) {',
-		'  const char* frame = (const char*)pgm_read_ptr(&frames[f]);',
-		"  return pgm_read_byte(frame + i) == '1';",
+		compact
+			? '  const uint8_t* frame = (const uint8_t*)pgm_read_ptr(&frames[f]);'
+			: '  const char* frame = (const char*)pgm_read_ptr(&frames[f]);',
+		compact
+			? '  return (pgm_read_byte(frame + (i >> 3)) >> (i & 7)) & 1;'
+			: "  return pgm_read_byte(frame + i) == '1';",
 		'}'
 	);
 	showOutput(

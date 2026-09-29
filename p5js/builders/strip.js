@@ -12,7 +12,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('strip-divider');
 		const group = tbGroup('strip-controls');
-		const nInput = tbNumberInput('strip-n', { min: 1, max: 32, value: 10 });
+		const nInput = tbNumberInput('strip-n', { min: 1, max: 32, value: 8 });
 		const buildBtn = tbButton('strip-build-btn', { icon: 'fa-hammer', text: 'Build' });
 		group.append(tbLabel('strip-n', 'N'), nInput, buildBtn);
 
