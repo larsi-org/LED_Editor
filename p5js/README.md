@@ -416,6 +416,7 @@ always clear which one the main view is showing.
 - `[` / `]` - duplicate the current frame before / after itself (the copy becomes current; the clipboard is untouched)
 - `c` / `v` - copy / paste the current frame
 - `i` - invert the current frame
+- Ctrl/Cmd+Z / Ctrl+Y (or Ctrl/Cmd+Shift+Z) - undo / redo, also the two icon buttons at the end of the drawing-tools row; whole-animation snapshots before each edit (LED toggle, paste, invert, random, clear, duplicate, delete), last 50, dropped when a new layout is built
 - `r` - flip a random LED (and its symmetric partner, if any)
 
 **Clear**, **Delete**, **Generate** and **Export Layout** are toolbar buttons only, with no

@@ -197,6 +197,8 @@ function applyLayoutData(name, data) {
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
 	stopPlayback();
+	undoStack = [];
+	redoStack = [];
 	states = [leds.map(() => false)];
 	thumbCache = []; // brand-new leds - every previous frame's cached image is for a completely different shape now
 	current = 0;
@@ -383,11 +385,57 @@ function toggleLED(i) {
 	invalidateCurrentThumb();
 }
 
+// Undo/redo: whole-animation snapshots (every frame plus which one is current), taken just
+// before each edit - simple and obviously correct, versus per-operation inverses for a dozen
+// different edit shapes. Frames are small boolean arrays, so 50 snapshots stays cheap even at
+// 64 frames of the densest builder. A new edit drops the redo stack; building a new layout
+// (applyLayoutData) drops both, since old snapshots are for a different shape of LEDs.
+const UNDO_LIMIT = 50;
+let undoStack = [];
+let redoStack = [];
+
+const takeSnapshot = () => ({ states: states.map((f) => f.slice()), current });
+
+function pushUndo() {
+	undoStack.push(takeSnapshot());
+	if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+	redoStack = [];
+}
+
+function restoreSnapshot(sn) {
+	states = sn.states.map((f) => f.slice());
+	current = sn.current;
+	thumbCache = states.map(() => null); // frames may have moved or changed anywhere
+}
+
+function undo() {
+	if (undoStack.length === 0) return;
+	redoStack.push(takeSnapshot());
+	restoreSnapshot(undoStack.pop());
+}
+
+function redo() {
+	if (redoStack.length === 0) return;
+	undoStack.push(takeSnapshot());
+	restoreSnapshot(redoStack.pop());
+}
+
+// executeKey() answers that change frame content (undoable); navigation, copy, Generate and
+// Export don't.
+const EDIT_KEYS = new Set([' ', 'i', '[', ']', 'Delete', 'v', 'r']);
+
 function executeKey(key) {
 	if (leds.length === 0) return;
 	stopPlayback();
+	if (EDIT_KEYS.has(key) && !(key === 'Delete' && states.length <= 1)) pushUndo();
 
 	switch (key) {
+		case 'undo':
+			undo();
+			break;
+		case 'redo':
+			redo();
+			break;
 		case ' ': // clear current frame (toolbar button only)
 			states[current] = states[current].map(() => false);
 			invalidateCurrentThumb();
@@ -525,6 +573,20 @@ function isTypingTarget() {
 // executeKey() by their data-key, but destructive or rarely-used actions get no keyboard
 // shortcut (no undo yet, and Space/Backspace are habitual scroll/back keys).
 const BUTTON_ONLY_KEYS = new Set([' ', 'Delete', 'g', 'e']);
+
+// Ctrl/Cmd+Z undoes, Ctrl+Y or Ctrl/Cmd+Shift+Z redoes - on keydown, while the modifier is
+// certainly still held (keyReleased() fires after it may already be up).
+function keyPressed(event) {
+	// a focused toolbar button (after clicking Undo, say) shouldn't swallow the shortcut - only
+	// real text/number fields, where Ctrl+Z belongs to the browser's own field undo
+	const tag = document.activeElement && document.activeElement.tagName;
+	if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !(event.ctrlKey || event.metaKey)) return;
+	const k = event.key.toLowerCase();
+	if (k === 'z' && !event.shiftKey) executeKey('undo');
+	else if (k === 'y' || (k === 'z' && event.shiftKey)) executeKey('redo');
+	else return;
+	return false;
+}
 
 function keyReleased() {
 	if (isTypingTarget() || BUTTON_ONLY_KEYS.has(key)) return;
@@ -693,6 +755,7 @@ function clickMainAt(x, y, single) {
 	let hit = false;
 	for (let i = 0; i < leds.length; i++) {
 		if (!leds[i].isOver(dx, dy, f, size, x, y)) continue;
+		if (!hit) pushUndo(); // one undo step per click, even over overlapping LEDs
 		hit = true;
 		if (single) {
 			states[current][i] = !states[current][i];
@@ -707,6 +770,8 @@ function clickMainAt(x, y, single) {
 function updateToolbarUI() {
 	document.getElementById('frame-counter').textContent = `${current + 1} / ${states.length}`;
 	document.getElementById('delete-btn').disabled = states.length <= 1;
+	document.getElementById('undo-btn').disabled = undoStack.length === 0;
+	document.getElementById('redo-btn').disabled = redoStack.length === 0;
 }
 
 // grow/shrink the canvas with the actual frame count instead of always reserving
