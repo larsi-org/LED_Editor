@@ -184,18 +184,17 @@ checked-in files with that naming convention) -
 (`?builder=matrix&countX=6&countY=5&zigzag=0`), [LED Coffee
 Table](https://larsi.org/make/CoffeeTable)
 (`?builder=matrix&countX=7&countY=7&zigzag=1` - matching the project's
-actual wiring order), and four older electronics boards (single strips,
-one square matrix) -
-[ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) and
-[ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/)
-(`countX=5, countY=1`),
-[ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/)
-(`countX=8, countY=1`),
-[ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/)
-(`countX=20, countY=1`), and
+actual wiring order), and one older electronics board (a square matrix) -
 [Peggy 2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/)
 (`countX=25, countY=25, zigzag=0`) - see the table above for each one's
-full link. Two Hex (Custom) settings are real hardware too:
+full link. Three older electronics boards (single strips) link to **Strip
+(Custom)** instead, now that it exists - `countX=N&countY=1` was the same
+shape, just without its own N-only control or `count=` URL param:
+[ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) and
+[ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) (`count=5`),
+[ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) (`count=8`),
+and [ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/)
+(`count=20`). Two Hex (Custom) settings are real hardware too:
 `count=10, zigzag=1` ([Schneeflocke](https://larsi.org/make/Schneeflocke) -
 a continuously wired strip) and `count=3, zigzag=0`
 ([ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) - a static
