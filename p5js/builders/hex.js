@@ -48,7 +48,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('hex-divider');
 		const group = tbGroup('hex-controls');
-		const nInput = tbNumberInput('hex-n', { min: 3, max: 20, value: 8 });
+		const nInput = tbNumberInput('hex-n', { min: 3, max: 16, value: 8 });
 		const { wrapper: zigzagWrapper } = tbCheckbox('hex-zigzag', 'Zigzag', {
 			checked: false,
 			title: 'Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start'
@@ -66,7 +66,7 @@ registerBuilder({
 	// sketch.js's parseBuilderParams()/selectBuilder(). Falls back to this builder's own
 	// inputs for whichever of the two is missing (or for both, on a manual Build click).
 	build(params) {
-		const n = Math.min(20, Math.max(3, parseInt(params?.count ?? document.getElementById('hex-n').value, 10) || 3));
+		const n = Math.min(16, Math.max(3, parseInt(params?.count ?? document.getElementById('hex-n').value, 10) || 3));
 		const zigzag = params?.zigzag ?? document.getElementById('hex-zigzag').checked;
 		document.getElementById('hex-n').value = n;
 		document.getElementById('hex-zigzag').checked = zigzag;
