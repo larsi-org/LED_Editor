@@ -114,8 +114,8 @@ layout file, which still needs a row in the Projects table and its own
   every file that used to live here turned out to be redundant with a live
   builder
 
-The landing layout defaults to Hex (Custom) at `count=10, zigzag=true`
-(Schneeflocke's own settings), but the URL can override it two ways. Both
+The landing layout defaults to Hex (Custom) at `count=8, zigzag=false`
+(the same defaults as the Hex toolbar), but the URL can override it two ways. Both
 are handled entirely client-side (`sketch.js` reads
 `location.search` itself), so either works the same whether the page is
 served by `python3 -m http.server` here or by `index.php` on larsi.org:
@@ -163,9 +163,9 @@ Rather than keep that one file around for a cosmetic radius difference,
 the live builder became the single source there too - every
 `layouts/*.json` file was deleted as a result (see `layouts/README.md`),
 not just unlinked, and the landing view with no URL params at all now
-defaults to Hex (Custom) at `count=10, zigzag=true` (the params that
-reproduced the old default `hex10.json` exactly) instead of fetching a
-file. `?layout=` and `LAYOUTS` (in `sketch.js`) both stay fully wired up
+defaults to Hex (Custom) at `count=8, zigzag=false` (the builder's own
+toolbar defaults; it once reproduced the old `hex10.json` exactly) instead
+of fetching a file. `?layout=` and `LAYOUTS` (in `sketch.js`) both stay fully wired up
 and ready for whenever a genuinely hand-edited layout - one no builder can
 reproduce - needs one again; there just isn't one right now.
 
@@ -220,10 +220,10 @@ LEDs at a time toward each point. N from 3 to 20. **Zigzag** mirrors every
 other row so LED numbering snakes back and forth (row 0 left-to-right, row
 1 right-to-left, ...) instead of always running left-to-right, matching
 how an LED strip is usually wired - continuing straight into the next row
-rather than a long return wire back to the start of each one. On by
-default - Schneeflocke (`count=10, zigzag=1`, a wired strip) needs it,
-ATtinyX5/hex3 (`count=3, zigzag=0`, a static board, not a strip) is the
-one real-hardware exception built with it off.
+rather than a long return wire back to the start of each one. Off by
+default - Schneeflocke (`count=10, zigzag=1`, a wired strip) needs it on
+(its project link passes it explicitly), ATtinyX5/hex3 (`count=3,
+zigzag=0`, a static board, not a strip) doesn't.
 
 Draws wire lines along the lattice's 3 natural directions (rows, plus both
 60°/120° diagonals - a triangular grid's pitch is exactly what makes those
@@ -288,7 +288,7 @@ Builds an equilateral triangle live, flat side down and point up: row 0
 (the base, N LEDs) is built first, left to right, then each row up has one
 fewer LED, ending with the single apex LED - N(N+1)/2 LEDs total (a
 triangular number). N from 2 to 20. **Zigzag** works the same way as
-Hex/Matrix's - on by default.
+Hex/Matrix's - off by default.
 
 Same triangular-lattice pitch as Hex (`dy = sqrt(0.75) * dx`), but centered
 on the shape's actual *centroid*, not its bounding box - an equilateral

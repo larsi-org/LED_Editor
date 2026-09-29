@@ -50,7 +50,7 @@ registerBuilder({
 		const group = tbGroup('hex-controls');
 		const nInput = tbNumberInput('hex-n', { min: 3, max: 20, value: 8 });
 		const { wrapper: zigzagWrapper } = tbCheckbox('hex-zigzag', 'Zigzag', {
-			checked: true,
+			checked: false,
 			title: 'Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start'
 		});
 		const buildBtn = tbButton('hex-build-btn', { icon: 'fa-hammer', text: 'Build' });

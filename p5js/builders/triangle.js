@@ -76,7 +76,7 @@ registerBuilder({
 		const group = tbGroup('triangle-controls');
 		const nInput = tbNumberInput('triangle-n', { min: 2, max: 20, value: 8 });
 		const { wrapper: zigzagWrapper } = tbCheckbox('triangle-zigzag', 'Zigzag', {
-			checked: true,
+			checked: false,
 			title: 'Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start'
 		});
 		const buildBtn = tbButton('triangle-build-btn', { icon: 'fa-hammer', text: 'Build' });

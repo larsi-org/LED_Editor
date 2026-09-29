@@ -16,11 +16,10 @@ const DATA_BASE = 'layouts/';
 // drop the file in layouts/.
 const LAYOUTS = [];
 
-// Landing view when neither ?layout= nor ?builder= is given at all - reproduces exactly what
-// the last checked-in default (hex10.json, Schneeflocke) used to show, now that it's just Hex
-// (Custom) at these params rather than a cached file.
+// Landing view when neither ?layout= nor ?builder= is given at all - Hex (Custom) at the
+// same N the toolbar defaults to (8), zigzag off like every builder's default.
 const DEFAULT_BUILDER_ID = '__hex__';
-const DEFAULT_BUILDER_PARAMS = { count: '10', zigzag: true };
+const DEFAULT_BUILDER_PARAMS = { count: '8', zigzag: false };
 
 let directory = '';
 
