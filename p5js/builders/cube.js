@@ -85,5 +85,6 @@ registerBuilder({
 		const n = Math.min(8, Math.max(2, parseInt(params?.count ?? document.getElementById('cube-n').value, 10) || 2));
 		document.getElementById('cube-n').value = n;
 		buildCube(n);
+		recordBuild('cube', { count: n });
 	}
 });

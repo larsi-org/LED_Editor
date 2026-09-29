@@ -50,5 +50,6 @@ registerBuilder({
 		const n = Math.min(16, Math.max(2, parseInt(params?.count ?? document.getElementById('circle-n').value, 10) || 2));
 		document.getElementById('circle-n').value = n;
 		buildCircle(n);
+		recordBuild('circle', { count: n });
 	}
 });

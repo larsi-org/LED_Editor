@@ -3,7 +3,7 @@
   "private": true,
   "description": "In-browser LED layout/animation editor (p5.js).",
   "scripts": {
-    "build": "cat led.js builders/common.js builders/strip.js builders/triangle.js builders/matrix.js builders/hex.js builders/circle.js builders/cube.js sketch.js | terser -c -m --comments false -o dist/led-editor.min.js"
+    "build": "cat led.js builders/common.js builders/strip.js builders/triangle.js builders/matrix.js builders/hex.js builders/circle.js builders/cube.js animation-file.js sketch.js | terser -c -m --comments false -o dist/led-editor.min.js"
   },
   "author": "Lars Schumann <larsi.org@gmail.com>",
   "license": "MIT",

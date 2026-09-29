@@ -110,6 +110,8 @@ layout file, which still needs a row in the Projects table and its own
   (the Play/Pause helper graphics/flower and Function3D use too); `index.html` loads it
   before the editor, and the **Play** button plus **fps** field drive it (playback steps
   through the frames in order at 1-30 fps; any click in the editor or toolbar action stops it)
+- `animation-file.js` - Save/Load/Export Layout's file formats: pure functions, no DOM
+  (see "Controls" below)
 - `dist/led-editor.min.js` - built from all of those (see "Building" below);
   `index.html` loads this, not the source files directly
 - `layouts/<name>.json` - one file per checked-in hand-edited layout the
@@ -306,8 +308,8 @@ single N, not in general).
 
 ## Symmetry, for the six builders
 
-None of the six save anything to a file on their own - use **Export
-Layout** to grab one yourself. Circle/Hex/Matrix/Strip/Triangle all
+None of the six save anything to a file on their own - use **Save**
+to keep an animation (and its builder recipe). Circle/Hex/Matrix/Strip/Triangle all
 compute `symmetry` (see "Layout file format" below) from the shape's actual
 geometry, not its row/column/ring index, so it's already correct under
 Hex/Matrix/Triangle's Zigzag without needing to special-case it - the same
@@ -419,9 +421,9 @@ always clear which one the main view is showing.
 - Ctrl/Cmd+Z / Ctrl+Y (or Ctrl/Cmd+Shift+Z) - undo / redo, also the two icon buttons at the end of the drawing-tools row; whole-animation snapshots before each edit (LED toggle, paste, invert, random, clear, duplicate, delete), last 50, dropped when a new layout is built
 - `r` - flip a random LED (and its symmetric partner, if any)
 
-**Clear**, **Delete**, **Generate** and **Export Layout** are toolbar buttons only, with no
-keyboard shortcut: the first two are destructive (there is no undo yet), and Space/Backspace
-are habitual scroll/back keys.
+**Clear**, **Delete**, **Generate**, **Export Layout**, **Save** and **Load** are toolbar buttons only, with no
+keyboard shortcut: Clear and Delete are destructive (Ctrl+Z undoes them, but a stray key
+shouldn't need to), and Space/Backspace are habitual scroll/back keys.
 
 The two output actions:
 
@@ -432,7 +434,44 @@ The two output actions:
   frame is instead a `uint8_t` array, 8 LEDs per byte: LED 1 is the lowest bit
   of the first byte, LED 8 the highest, LED 9 the lowest bit of the second
   byte, and so on, with the last byte zero-padded
-- **Export Layout** - open the same text box with the current layout's own `layouts/*.json`
-  contents instead - the only way to keep a layout built with **Circle**,
-  **Hex**, or **Matrix (Custom)**, since those are never written to a file
-  on their own
+- **Export Layout** - open the same text box with one `label,x,y` line per LED (x right, y
+  down as shown, center `(0, 0)`, edges `±1`) - the coordinates for placing the LEDs on a
+  PCB. No wires or symmetry: those are only for the editor's own use. **Load** takes this
+  list back in.
+
+Two file actions keep and restore work (all in `animation-file.js`, plain functions with no
+DOM so they can be tested under node):
+
+- **Save** - download the animation as a file: `led-editor-animation` format v1, e.g.
+  `hex-10-zigzag-8frames.json`:
+
+  ```json
+  {
+   "format": "led-editor-animation",
+   "version": 1,
+   "builder": "hex",
+   "params": {"count":10,"zigzag":true},
+   "fps": 4,
+   "frames": [
+    "0110...",
+    "0011..."
+   ]
+  }
+  ```
+
+  A builder made the layout, so the file stores its recipe (`builder` plus `params`:
+  `count`, or `countX`/`countY`, and `zigzag`) rather than LED positions. A layout that came
+  from a file instead (see Load) is embedded as `"layout": {...}` in the same shape as the
+  "Layout file format" above, so the animation file is self-contained. `frames` are one
+  string of `0`/`1` per frame, LED 1 first - the same encoding Generate emits.
+- **Load** - opens the file picker and takes any of: an animation file (the layout is
+  rebuilt from the recipe or embedded layout, frames and fps restored), a layout JSON
+  (`leds`/`r`/`symmetry`/`lines`), or a `label,x,y` list (`x,y` alone works too; header row
+  optional; comma, semicolon or tab separated). The last two give a blank one-frame
+  animation on that layout - this is how a shape no builder can make (an ornament, an
+  Easter piece) gets in. Positions already within `[-1, 1]` are used as they are; wider ones
+  (a PCB tool's millimetres) are centered and scaled to fit, and the dot size shrinks if LEDs
+  sit closer than the default allows. Labels are ignored - LEDs number in row order. Loading
+  over an animation that has any content asks first, and clears undo history like any
+  new layout; a file-loaded layout shows as **Loaded layout** in the dropdown until a builder
+  is picked.

@@ -29,5 +29,6 @@ registerBuilder({
 		const n = Math.min(32, Math.max(1, parseInt(params?.count ?? document.getElementById('strip-n').value, 10) || 1));
 		document.getElementById('strip-n').value = n;
 		buildMatrix(n, 1, false);
+		recordBuild('strip', { count: n });
 	}
 });

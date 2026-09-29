@@ -71,5 +71,6 @@ registerBuilder({
 		document.getElementById('hex-n').value = n;
 		document.getElementById('hex-zigzag').checked = zigzag;
 		buildHex(n, zigzag);
+		recordBuild('hex', { count: n, zigzag });
 	}
 });

@@ -196,6 +196,7 @@ function applyLayoutData(name, data) {
 	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
+	currentBuild = null; // a builder's build() sets it again right after this returns
 	stopPlayback();
 	undoStack = [];
 	redoStack = [];
@@ -476,8 +477,14 @@ function executeKey(key) {
 		case 'g': // generate source of animation
 			generate();
 			break;
-		case 'e': // export the current layout as a layouts/*.json file
+		case 'e': // list the LED coordinates (label,x,y)
 			exportLayout();
+			break;
+		case 'save': // toolbar button only - download the animation as a file
+			saveAnimation();
+			break;
+		case 'load': // toolbar button only - opens the file picker, see loadAnimationFile()
+			document.getElementById('load-input').click();
 			break;
 	}
 }
@@ -550,13 +557,12 @@ function clean(v) {
 }
 
 function exportLayout() {
-	const data = { leds: leds.map((led) => ({ x: clean(led.posX), y: clean(led.posY) })), r: clean(radius) };
-	if (symmetry.some((v, i) => v !== i)) data.symmetry = symmetry;
-	if (ledLines.length) data.lines = ledLines;
 	showOutput(
-		'Layout file',
-		'Save as <code>layouts/&lt;name&gt;.json</code> (see the <code>p5js/</code> README) to keep this layout.',
-		JSON.stringify(data)
+		'LED coordinates',
+		'One line per LED: <code>label,x,y</code>, x to the right and y down as shown here, the ' +
+		'center at (0, 0) and the edges at &plusmn;1. Paste into a spreadsheet or your PCB tool - ' +
+		'Load takes this same list back in.',
+		layoutToCsv(leds)
 	);
 }
 
@@ -789,6 +795,88 @@ function updateCanvasHeight() {
 	resizeCanvas(DIM, THUMB_TOP + rows * THUMB_SIZE);
 }
 
+// Save: the whole animation as a file (see animation-file.js) - a builder recipe when a
+// builder made the layout, the layout itself otherwise.
+function saveAnimation() {
+	const build = currentBuild && { id: currentBuild.id.replace(/^__|__$/g, ''), params: currentBuild.params };
+	const text = serializeAnimation({
+		states, fps: currentFps(), build,
+		layout: build ? null : layoutData()
+	});
+	const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = animationFilename(build, states.length);
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// The current layout as a plain layout object - what gets embedded in a saved animation when
+// no builder made it (a loaded file's layout, or a fetched layouts/*.json).
+function layoutData() {
+	const data = { leds: leds.map((led) => ({ x: clean(led.posX), y: clean(led.posY) })), r: clean(radius) };
+	if (symmetry.some((v, i) => v !== i)) data.symmetry = symmetry;
+	if (ledLines.length) data.lines = ledLines;
+	return data;
+}
+
+const currentFps = () => Math.min(30, Math.max(1, parseFloat(document.getElementById('fps-input').value) || 4));
+
+// An untouched one-frame blank animation has nothing to lose - anything else asks first.
+const isPristineAnimation = () => states.length === 1 && !states[0].some(Boolean);
+
+// Load: an animation file, a layout file, or a label,x,y list (see parseLoadedFile()).
+async function loadAnimationFile(file) {
+	let parsed;
+	try {
+		parsed = parseLoadedFile(await file.text());
+	} catch (e) {
+		alert(`Can't load ${file.name}: ${e.message}.`);
+		return;
+	}
+	if (!isPristineAnimation() && !confirm(`Replace the current animation with ${file.name}?`)) return;
+
+	try {
+		if (parsed.builder) {
+			const builder = BUILDERS.find((b) => b.id === `__${parsed.builder}__`);
+			if (!builder) throw new Error(`unknown builder "${parsed.builder}"`);
+			selectBuilder(builder, parsed.params);
+		} else {
+			showLoadedLayout(parsed.layout);
+		}
+		if (parsed.kind === 'animation') {
+			states = framesFromStrings(parsed.frames, leds.length);
+			thumbCache = [];
+			current = 0;
+			if (parsed.fps !== undefined) document.getElementById('fps-input').value = Math.min(30, Math.max(1, parsed.fps));
+		}
+	} catch (e) {
+		alert(`Can't load ${file.name}: ${e.message}. The layout was rebuilt blank.`);
+	}
+}
+
+// A layout that came from a file rather than a builder: the dropdown gets a "Loaded layout"
+// entry (removed again the moment a builder is picked - see selectBuilder()) and every
+// builder's own controls hide, since none of them describes this shape.
+function showLoadedLayout(layout) {
+	const select = document.getElementById('layout');
+	if (!select.querySelector('option[value="__loaded__"]')) {
+		const option = document.createElement('option');
+		option.value = '__loaded__';
+		option.textContent = 'Loaded layout';
+		select.appendChild(option);
+	}
+	select.value = '__loaded__';
+	for (const b of BUILDERS) {
+		b._divider.hidden = true;
+		b._group.hidden = true;
+	}
+	document.getElementById('output').hidden = true;
+	applyLayoutData('loaded', layout);
+}
+
 // Playback preview: steps `current` through every frame in order, looping, at the fps field's
 // rate - createPlayPauseLoop() is the same shared helper graphics/flower and Function3D use
 // (play-pause-loop.js, loaded before this file). Any click in the canvas or toolbar action
@@ -801,11 +889,16 @@ function wireToolbar() {
 	playLoop = createPlayPauseLoop(
 		document.getElementById('play-btn'),
 		() => { current = (current + 1) % states.length; },
-		() => Math.min(30, Math.max(1, parseFloat(fpsInput.value) || 4))
+		currentFps
 	);
 	window.addEventListener('pagehide', playLoop.stop);
 	document.querySelectorAll('#toolbar .tb-btn[data-key]').forEach((btn) => {
 		btn.addEventListener('click', () => executeKey(btn.dataset.key));
+	});
+	const loadInput = document.getElementById('load-input');
+	loadInput.addEventListener('change', () => {
+		if (loadInput.files[0]) loadAnimationFile(loadInput.files[0]);
+		loadInput.value = ''; // so picking the same file again still fires 'change'
 	});
 	document.getElementById('symmetry-toggle').addEventListener('change', (e) => {
 		symmetryEnabled = e.target.checked;
@@ -832,6 +925,7 @@ function populateLayoutSelect() {
 	populateBuilderOptions(select, anchor);
 
 	select.addEventListener('change', () => {
+		if (select.value === '__loaded__') return; // the file-loaded layout is already showing
 		const builder = BUILDERS.find((b) => b.id === select.value);
 		if (builder) selectBuilder(builder); // no params - build() falls back to its own toolbar inputs
 		else loadLayout(select.value);

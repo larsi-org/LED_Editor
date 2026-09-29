@@ -97,5 +97,6 @@ registerBuilder({
 		document.getElementById('triangle-n').value = n;
 		document.getElementById('triangle-zigzag').checked = zigzag;
 		buildTriangle(n, zigzag);
+		recordBuild('triangle', { count: n, zigzag });
 	}
 });

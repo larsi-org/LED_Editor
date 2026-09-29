@@ -56,8 +56,18 @@ function populateBuilderOptions(select, anchor) {
 // change handler (manual selection, no params - build() falls back to reading this builder's
 // own toolbar inputs) and sketch.js's setup() ?builder= URL handling (params supplied, see
 // parseBuilderParams() below).
+// What the layout on screen was built from - { id, params } - so Save can store a builder
+// recipe instead of LED positions. Each builder's build() calls this right after its
+// applyLayoutData(); applyLayoutData() itself resets it, so a layout that came from a file
+// (currentBuild === null) gets embedded in a saved animation instead.
+let currentBuild = null;
+function recordBuild(id, params) {
+	currentBuild = { id, params };
+}
+
 function selectBuilder(builder, params) {
 	document.getElementById('output').hidden = true;
+	document.getElementById('layout').querySelector('option[value="__loaded__"]')?.remove();
 	for (const b of BUILDERS) {
 		b._divider.hidden = true;
 		b._group.hidden = true;

@@ -90,7 +90,13 @@
 				Compact
 			</label>
 			<button class="tb-btn" data-key="g" title="Generate Arduino code"><i class="fas fa-code"></i> Generate</button>
-			<button class="tb-btn" data-key="e" title="Export layout as JSON"><i class="fas fa-file-export"></i> Export Layout</button>
+			<button class="tb-btn" data-key="e" title="Show each LED's label, x and y (for a PCB layout)"><i class="fas fa-file-export"></i> Export Layout</button>
+		</div>
+		<span class="tb-divider"></span>
+		<div class="tb-group">
+			<button class="tb-btn" data-key="save" title="Download this animation as a file"><i class="fas fa-download"></i> Save</button>
+			<button class="tb-btn" data-key="load" title="Load an animation or layout file (an animation file, a layout JSON, or a label,x,y list)"><i class="fas fa-upload"></i> Load</button>
+			<input type="file" id="load-input" accept=".json,.csv,.txt" hidden>
 		</div>
 	</div>
 

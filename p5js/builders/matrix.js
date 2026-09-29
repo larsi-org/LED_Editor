@@ -126,5 +126,6 @@ registerBuilder({
 		document.getElementById('matrix-height').value = height;
 		document.getElementById('matrix-zigzag').checked = zigzag;
 		buildMatrix(width, height, zigzag);
+		recordBuild('matrix', { countX: width, countY: height, zigzag });
 	}
 });
