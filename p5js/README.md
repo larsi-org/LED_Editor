@@ -147,10 +147,10 @@ dropdown:
 | [make/led_6x5](https://larsi.org/make/led_6x5/) | `?builder=matrix&countX=6&countY=5&zigzag=0` |
 | [make/CoffeeTable](https://larsi.org/make/CoffeeTable/) | `?builder=matrix&countX=7&countY=7&zigzag=1` |
 | [electronics/ATtinyX5/hex3](https://larsi.org/electronics/ATtinyX5/hex3/) | `?builder=hex&count=3&zigzag=0` |
-| [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `?builder=matrix&countX=5&countY=1&zigzag=0` |
-| [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `?builder=matrix&countX=20&countY=1&zigzag=0` |
-| [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `?builder=matrix&countX=5&countY=1&zigzag=0` |
-| [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `?builder=matrix&countX=8&countY=1&zigzag=0` |
+| [electronics/ATtinyX5/led5](https://larsi.org/electronics/ATtinyX5/led5/) | `?builder=strip&count=5` |
+| [electronics/ATtinyX5/led20](https://larsi.org/electronics/ATtinyX5/led20/) | `?builder=strip&count=20` |
+| [electronics/ATmegaX8/led5](https://larsi.org/electronics/ATmegaX8/led5/) | `?builder=strip&count=5` |
+| [electronics/ATmegaX8/led8](https://larsi.org/electronics/ATmegaX8/led8/) | `?builder=strip&count=8` |
 | [electronics/ATmegaX8/Peggy2LE](https://larsi.org/electronics/ATmegaX8/Peggy2LE/) | `?builder=matrix&countX=25&countY=25&zigzag=0` |
 
 As of 2026-09-28, all ten of these switched from `?layout=` to `?builder=`
