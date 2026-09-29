@@ -44,18 +44,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const layoutParam = urlParams.get('layout');
 const builderParam = urlParams.get('builder');
 
-// Undefined (not present in the URL at all) lets a builder's own build(params) fall back to
-// its toolbar default via ?? - only an explicit zigzag=0/1 (or true/false) should override it.
-function parseBuilderParams(urlParams) {
-	const zigzagRaw = urlParams.get('zigzag');
-	return {
-		count: urlParams.get('count'),
-		countX: urlParams.get('countX'),
-		countY: urlParams.get('countY'),
-		zigzag: zigzagRaw === null ? undefined : (zigzagRaw === '1' || zigzagRaw === 'true')
-	};
-}
-
 // colors - read from led-editor.css's :root palette (see led.js's cssVar() comment for why
 // this is safe at plain top-level script scope), not hardcoded, so there's one place to
 // change any of them

@@ -55,7 +55,7 @@ function populateBuilderOptions(select, anchor) {
 // Shows builder's own controls and builds it - shared by populateLayoutSelect()'s dropdown
 // change handler (manual selection, no params - build() falls back to reading this builder's
 // own toolbar inputs) and sketch.js's setup() ?builder= URL handling (params supplied, see
-// parseBuilderParams()).
+// parseBuilderParams() below).
 function selectBuilder(builder, params) {
 	document.getElementById('output').hidden = true;
 	for (const b of BUILDERS) {
@@ -66,6 +66,21 @@ function selectBuilder(builder, params) {
 	builder._divider.hidden = false;
 	builder._group.hidden = false;
 	builder.build(params);
+}
+
+// Shapes a ?builder= URL's own params into the { count, countX, countY, zigzag } shape every
+// builder's build(params) expects (see this file's own top comment on that interface) - called
+// once, from sketch.js's setup(). Undefined (not present in the URL at all) lets build(params)
+// fall back to its toolbar default via ?? - only an explicit zigzag=0/1 (or true/false) should
+// override it.
+function parseBuilderParams(urlParams) {
+	const zigzagRaw = urlParams.get('zigzag');
+	return {
+		count: urlParams.get('count'),
+		countX: urlParams.get('countX'),
+		countY: urlParams.get('countY'),
+		zigzag: zigzagRaw === null ? undefined : (zigzagRaw === '1' || zigzagRaw === 'true')
+	};
 }
 
 function tbDivider(id) {
