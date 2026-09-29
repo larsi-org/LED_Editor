@@ -33,7 +33,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('circle-divider');
 		const group = tbGroup('circle-controls');
-		const nInput = tbNumberInput('circle-n', { min: 3, max: 16, value: 8 });
+		const nInput = tbNumberInput('circle-n', { min: 2, max: 16, value: 8 });
 		const buildBtn = tbButton('circle-build-btn', { icon: 'fa-hammer', text: 'Build' });
 		group.append(tbLabel('circle-n', 'N'), nInput, buildBtn);
 
@@ -47,7 +47,7 @@ registerBuilder({
 	// parseBuilderParams()/selectBuilder(). Falls back to this builder's own N input when a
 	// param is missing (manual Build click passes no params at all) or not present in the URL.
 	build(params) {
-		const n = Math.min(16, Math.max(3, parseInt(params?.count ?? document.getElementById('circle-n').value, 10) || 3));
+		const n = Math.min(16, Math.max(2, parseInt(params?.count ?? document.getElementById('circle-n').value, 10) || 2));
 		document.getElementById('circle-n').value = n;
 		buildCircle(n);
 	}

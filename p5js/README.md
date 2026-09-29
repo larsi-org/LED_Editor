@@ -204,7 +204,7 @@ snake row to row).
 ## Circle (Custom)
 
 Builds N rings (plus a center LED) live, in memory, growing outward - ring
-`c` gets `6c` LEDs, evenly spaced. N from 3 to 16. No zigzag option: unlike
+`c` gets `6c` LEDs, evenly spaced. N from 2 to 16. No zigzag option: unlike
 a row-by-row shape, going around each ring in one direction is already a
 sensible order to solder in.
 
@@ -216,7 +216,7 @@ merge into fewer, longer lines the way `collinearLines()` does for those.
 ## Hex (Custom)
 
 Builds a hexagon live: `2N-1` rows, widest in the middle, narrowing N-1
-LEDs at a time toward each point. N from 3 to 16. **Zigzag** mirrors every
+LEDs at a time toward each point. N from 2 to 16. **Zigzag** mirrors every
 other row so LED numbering snakes back and forth (row 0 left-to-right, row
 1 right-to-left, ...) instead of always running left-to-right, matching
 how an LED strip is usually wired - continuing straight into the next row
