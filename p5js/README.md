@@ -420,6 +420,15 @@ always clear which one the main view is showing.
 - `i` - invert the current frame
 - Ctrl/Cmd+Z / Ctrl+Y (or Ctrl/Cmd+Shift+Z) - undo / redo, also the two icon buttons at the end of the drawing-tools row; whole-animation snapshots before each edit (LED toggle, paste, invert, random, clear, duplicate, delete), last 50, dropped when a new layout is built
 - `r` - flip a random LED (and its symmetric partner, if any)
+- Space (held) + drag - pan the view, whatever the tool (also the middle mouse button)
+
+**Tool** (three buttons at the start of the drawing-tools row): **Toggle** is the original
+behavior - a click toggles an LED, a drag pans. **Paint** turns LEDs on and **Erase** turns them
+off, by click or by dragging across them (the segment between mouse events is sampled, so a
+fast sweep skips none; Symmetry applies to each LED touched; a right-button click or drag
+paints/erases just that one LED). A whole drag is one undo step. In Paint/Erase a plain drag
+paints, so pan with Space+drag or the middle button (two fingers on touch, which also
+pinch-zooms). The tool resets to Toggle when a new layout is built.
 
 **Clear**, **Delete**, **Generate**, **Export Layout**, **Save** and **Load** are toolbar buttons only, with no
 keyboard shortcut: Clear and Delete are destructive (Ctrl+Z undoes them, but a stray key

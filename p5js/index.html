@@ -44,6 +44,12 @@
 
 		<span class="tb-break"></span>
 		<div class="tb-group">
+			<button class="tb-btn active" data-tool="normal" aria-pressed="true" aria-label="Toggle mode" title="Toggle mode: click toggles an LED, drag pans the view"><i class="fas fa-hand-pointer"></i></button>
+			<button class="tb-btn" data-tool="paint" aria-pressed="false" aria-label="Paint mode" title="Paint mode: click or drag to turn LEDs on (Space+drag pans)"><i class="fas fa-pencil"></i></button>
+			<button class="tb-btn" data-tool="erase" aria-pressed="false" aria-label="Erase mode" title="Erase mode: click or drag to turn LEDs off (Space+drag pans)"><i class="fas fa-eraser"></i></button>
+		</div>
+		<span class="tb-divider"></span>
+		<div class="tb-group">
 			<label class="tb-checkbox" title="Toggle an LED and its mirror partners together (right-click toggles just one)">
 				<input type="checkbox" id="symmetry-toggle" checked>
 				Symmetry
@@ -58,7 +64,7 @@
 
 		<span class="tb-divider"></span>
 		<div class="tb-group">
-			<button class="tb-btn" data-key=" " title="Clear frame"><i class="fas fa-eraser"></i> Clear</button>
+			<button class="tb-btn" data-key=" " title="Clear frame"><i class="fas fa-broom"></i> Clear</button>
 			<button class="tb-btn" data-key="i" title="Invert frame (I)"><i class="fas fa-circle-half-stroke"></i> Invert</button>
 			<button class="tb-btn" data-key="r" title="Randomize frame (R)"><i class="fas fa-shuffle"></i> Random</button>
 		</div>

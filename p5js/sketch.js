@@ -155,6 +155,7 @@ function setup() {
 	const canvas = createCanvas(DIM, THUMB_TOP + THUMB_SIZE); // starts at 1 thumbnail row; grows with the frame count
 	canvas.parent('sketch-holder');
 	wireTouchGestures(canvas.elt);
+	canvas.elt.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); }); // no middle-click autoscroll
 	canvas.elt.oncontextmenu = () => false; // right-click toggles a single LED, don't show the browser menu
 	textAlign(CENTER, CENTER);
 
@@ -198,6 +199,7 @@ function applyLayoutData(name, data) {
 	clipboard = leds.map(() => false);
 	currentBuild = null; // a builder's build() sets it again right after this returns
 	stopPlayback();
+	setTool('normal'); // a new layout shouldn't open in Erase
 	undoStack = [];
 	redoStack = [];
 	states = [leds.map(() => false)];
@@ -319,6 +321,11 @@ function deleteFrame(atIndex) {
 
 function draw() {
 	background(PAGE_BACKGROUND);
+	if (!mainTouch) {
+		if (!inMainView(mouseX, mouseY)) cursor(ARROW);
+		else if (spaceDown || forcedPan) cursor(dragging ? 'grabbing' : 'grab');
+		else cursor(tool === 'normal' ? ARROW : CROSS);
+	}
 
 	if (leds.length === 0) return; // layout still loading
 
@@ -584,6 +591,10 @@ const BUTTON_ONLY_KEYS = new Set([' ', 'Delete', 'g', 'e', 'c', 'v']);
 // Ctrl/Cmd+Z undoes, Ctrl+Y or Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+C / V copy / paste the frame - on keydown, while the modifier is
 // certainly still held (keyReleased() fires after it may already be up).
 function keyPressed(event) {
+	if (event.key === ' ' && !isTypingTarget()) { // Space held = pan mode, whatever the tool
+		spaceDown = true;
+		return false; // and the page must not scroll
+	}
 	// a focused toolbar button (after clicking Undo, say) shouldn't swallow the shortcut - only
 	// real text/number fields, where Ctrl+Z belongs to the browser's own field undo
 	const tag = document.activeElement && document.activeElement.tagName;
@@ -599,6 +610,7 @@ function keyPressed(event) {
 }
 
 function keyReleased() {
+	if (key === ' ') spaceDown = false;
 	if (isTypingTarget() || BUTTON_ONLY_KEYS.has(key)) return;
 	executeKey(key);
 	return false;
@@ -612,17 +624,86 @@ function keyReleased() {
 let dragging = false;
 let dragDistance = 0;
 
+// Tool: 'normal' (click toggles an LED, drag pans - the original behavior), 'paint' (click or
+// drag turns LEDs on) or 'erase' (turns them off). In paint/erase a plain drag paints, so
+// panning there is Space+drag or the middle mouse button (forcedPan, also honored in
+// normal); two fingers still pan/zoom on touch.
+let tool = 'normal';
+let spaceDown = false;
+let forcedPan = false;   // this press is a pan no matter the tool (Space held, or middle button)
+let paintStroke = null;  // { single, last: {x, y} } while a mouse paint/erase drag is in progress
+let strokePushed = false; // this stroke has already recorded its one undo step
+
+function setTool(name) {
+	tool = name;
+	document.querySelectorAll('#toolbar [data-tool]').forEach((btn) => {
+		const on = btn.dataset.tool === name;
+		btn.classList.toggle('active', on);
+		btn.setAttribute('aria-pressed', on);
+	});
+}
+
+// Sets LED i (and, unless `single`, its symmetry group) to `value`; the stroke's first actual
+// change records the undo step, so a whole drag is one Ctrl+Z and a drag over LEDs that were
+// already right records nothing.
+function paintLED(i, value, single) {
+	const group = [i];
+	if (!single && symmetryEnabled) {
+		for (let j = symmetry[i]; j !== i; j = symmetry[j]) group.push(j);
+	}
+	if (group.every((k) => states[current][k] === value)) return;
+	if (!strokePushed) {
+		pushUndo();
+		strokePushed = true;
+	}
+	for (const k of group) states[current][k] = value;
+	invalidateCurrentThumb();
+}
+
+// Paints every LED under the straight segment (x0, y0) -> (x1, y1), sampled finely enough that
+// a fast sweep between two mouse events can't skip one. Returns whether any LED was under it.
+function paintAt(x0, y0, x1, y1, single) {
+	const { dx, dy, f, size } = mainViewProjection();
+	const value = tool === 'paint';
+	const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / Math.max(2, size / 2)));
+	let hit = false;
+	for (let k = 0; k <= steps; k++) {
+		const x = x0 + (x1 - x0) * k / steps;
+		const y = y0 + (y1 - y0) * k / steps;
+		if (!inMainView(x, y)) continue; // LEDs outside the square are clipped from view
+		for (let i = 0; i < leds.length; i++) {
+			if (!leds[i].isOver(dx, dy, f, size, x, y)) continue;
+			hit = true;
+			paintLED(i, value, single);
+		}
+	}
+	return hit;
+}
+
 function mousePressed() {
 	// a press anywhere on the canvas (editor or thumbnails) - not the toolbar's own Play button
 	if (mouseX >= 0 && mouseX < width && mouseY >= 0 && mouseY < height) stopPlayback();
 	if (mainTouch) return; // touches that begin in the main square are handled by wireTouchGestures()
 	if (leds.length === 0 || !inMainView(mouseX, mouseY)) return;
+	forcedPan = spaceDown || mouseButton === CENTER;
+	if (tool !== 'normal' && !forcedPan) {
+		strokePushed = false;
+		paintStroke = { single: mouseButton === RIGHT, last: { x: mouseX, y: mouseY } };
+		paintAt(mouseX, mouseY, mouseX, mouseY, paintStroke.single);
+		return;
+	}
 	dragging = true;
 	dragDistance = 0;
 }
 
 function mouseDragged() {
-	if (!dragging || mainTouch) return;
+	if (mainTouch) return;
+	if (paintStroke) {
+		paintAt(paintStroke.last.x, paintStroke.last.y, mouseX, mouseY, paintStroke.single);
+		paintStroke.last = { x: mouseX, y: mouseY };
+		return;
+	}
+	if (!dragging) return;
 	viewPanX += mouseX - pmouseX;
 	viewPanY += mouseY - pmouseY;
 	dragDistance += Math.abs(mouseX - pmouseX) + Math.abs(mouseY - pmouseY);
@@ -654,6 +735,9 @@ let touchPan = null;    // { x, y, dist } - last position of the one finger, whi
 let touchMoved = 0;     // total travel of this gesture, to tell a tap from a pan
 let touchMulti = false; // a second finger joined: this gesture is never a tap
 let pinchStart = null;  // { dist, zoom, mx, my } while two fingers are down
+let touchPaint = false; // this one-finger gesture paints/erases (tool isn't 'normal') instead of panning
+let touchStart = null;  // where the finger went down, for the first segment of a paint stroke
+let touchStroke = false; // the finger has moved far enough that it's a stroke, not a tap
 let lastEmptyTap = null; // { t, x, y } - a tap on empty space; a second one nearby resets the view
 
 function wireTouchGestures(el) {
@@ -677,6 +761,10 @@ function wireTouchGestures(el) {
 			touchMulti = false;
 			touchMoved = 0;
 			touchPan = p;
+			touchStart = p;
+			touchPaint = tool !== 'normal';
+			touchStroke = false;
+			strokePushed = false;
 		} else if (!mainTouch) {
 			return;
 		} else if (e.touches.length === 2) {
@@ -699,9 +787,18 @@ function wireTouchGestures(el) {
 			pinchStart.my = cur.my;
 		} else if (touchPan && e.touches.length === 1) {
 			const p = pos(e.touches[0]);
-			viewPanX += p.x - touchPan.x;
-			viewPanY += p.y - touchPan.y;
 			touchMoved += Math.abs(p.x - touchPan.x) + Math.abs(p.y - touchPan.y);
+			if (touchPaint) {
+				// nothing is painted until the finger has really moved - a tap (or a second
+				// finger landing for a pinch) mustn't leave a stray LED behind
+				if (touchMoved > 4) {
+					paintAt(touchStroke ? touchPan.x : touchStart.x, touchStroke ? touchPan.y : touchStart.y, p.x, p.y, false);
+					touchStroke = true;
+				}
+			} else {
+				viewPanX += p.x - touchPan.x;
+				viewPanY += p.y - touchPan.y;
+			}
 			touchPan = p;
 		}
 	}, { passive: false });
@@ -717,7 +814,7 @@ function wireTouchGestures(el) {
 		// mainTouch set - clear it once the event has finished dispatching
 		setTimeout(() => { mainTouch = false; }, 0);
 		if (!wasTap) return;
-		if (clickMainAt(p.x, p.y, false)) {
+		if (touchPaint ? paintAt(p.x, p.y, p.x, p.y, false) : clickMainAt(p.x, p.y, false)) {
 			lastEmptyTap = null;
 			return;
 		}
@@ -737,6 +834,13 @@ function mouseReleased() {
 	if (leds.length === 0) return;
 
 	if (mainTouch) return; // see mousePressed()
+
+	if (paintStroke || forcedPan) { // a paint/erase drag, or a Space/middle-button pan: never also a click
+		paintStroke = null;
+		forcedPan = false;
+		dragging = false;
+		return;
+	}
 
 	const startedInMain = dragging; // mousePressed() only sets this for a press inside the main square
 	const wasPan = dragging && dragDistance > 4;
@@ -885,6 +989,18 @@ let playLoop = null;
 const stopPlayback = () => { if (playLoop) playLoop.stop(); };
 
 function wireToolbar() {
+	document.querySelectorAll('#toolbar [data-tool]').forEach((btn) => {
+		btn.addEventListener('click', () => setTool(btn.dataset.tool));
+	});
+	// a button or checkbox left focused after a mouse click would answer Space (pan) itself and
+	// swallow the bare-key shortcuts - so blur it (keyboard-driven clicks, detail 0, keep their
+	// focus). Delegated, since the builders add their own checkboxes/buttons at load.
+	document.getElementById('toolbar').addEventListener('click', (e) => {
+		const el = e.target.closest('.tb-btn, input[type="checkbox"]');
+		if (el && e.detail > 0) el.blur();
+	});
+	document.getElementById('layout').addEventListener('change', (e) => e.target.blur());
+	window.addEventListener('blur', () => { spaceDown = false; });
 	const fpsInput = document.getElementById('fps-input');
 	playLoop = createPlayPauseLoop(
 		document.getElementById('play-btn'),

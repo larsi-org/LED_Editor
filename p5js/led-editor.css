@@ -134,6 +134,11 @@
 	border-color: var(--border-button-hover);
 }
 
+.tb-btn.active {
+	background: var(--bg-button-hover);
+	border-color: var(--border-button-hover);
+}
+
 .tb-btn:focus-visible {
 	outline: 2px solid var(--link);
 	outline-offset: 1px;
