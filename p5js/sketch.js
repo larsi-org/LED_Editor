@@ -48,7 +48,9 @@ const builderParam = urlParams.get('builder');
 // this is safe at plain top-level script scope), not hardcoded, so there's one place to
 // change any of them
 const BACKGROUND      = cssVar('--bg-canvas');
-const FILL_BACKGROUND = cssVar('--bg-canvas-fill');
+const PAGE_BACKGROUND = cssVar('--bg-page');    // canvas ground - same as the panel around the toolbar
+const PANEL_BACKGROUND = cssVar('--bg-toolbar'); // thumbnail strip - same as the toolbar
+const PANEL_BORDER    = cssVar('--border-toolbar');
 const STROKE_DIV      = cssVar('--accent');
 const STROKE_WIRE     = cssVar('--wire');
 const THUMB_ACTIVE    = cssVar('--border-button-hover'); // same blue the toolbar buttons highlight with on hover
@@ -61,7 +63,7 @@ const LEDS_DY = DIM2; // buttons/label used to live in a reserved band above thi
 
 // thumbnails sit below the main grid (not beside it - that made the canvas
 // twice as wide as it needed to be, always overflowing the page)
-const THUMB_GAP = 20;
+const THUMB_GAP = 8; // same gap as toolbar-to-editor (#toolbar's margin-bottom)
 const THUMB_TOP = DIM + THUMB_GAP;
 const THUMB_SIZE = 100; // one thumbnail's on-canvas footprint, width == height
 
@@ -279,7 +281,7 @@ function renderThumb(ti) {
 	const a = c - 1;
 	const f = Math.round(0.9 * a);
 
-	g.background(FILL_BACKGROUND);
+	g.background(PANEL_BACKGROUND);
 	g.stroke(STROKE_DIV);
 	g.fill(BACKGROUND);
 	g.rect(c - a, c - a, 2 * a, 2 * a);
@@ -314,7 +316,7 @@ function deleteFrame(atIndex) {
 }
 
 function draw() {
-	background(FILL_BACKGROUND);
+	background(PAGE_BACKGROUND);
 
 	if (leds.length === 0) return; // layout still loading
 
@@ -327,6 +329,9 @@ function draw() {
 	// cheap (one rect), and means switching frames never has to invalidate/re-render either
 	// thumbnail's cached LED content just to move the highlight.
 	const rows = Math.min(8, Math.ceil(states.length / 8));
+	fill(PANEL_BACKGROUND);
+	noStroke();
+	rect(0, THUMB_TOP, DIM, rows * THUMB_SIZE);
 	for (let ty = 0; ty < rows; ty++) {
 		for (let tx = 0; tx < 8; tx++) {
 			const ti = tx + 8 * ty;
@@ -345,6 +350,12 @@ function draw() {
 			}
 		}
 	}
+
+	// strip's border last, over the cells' own edges - same look as the toolbar's
+	noFill();
+	stroke(PANEL_BORDER);
+	strokeWeight(1);
+	rect(0.5, THUMB_TOP + 0.5, DIM - 1, rows * THUMB_SIZE - 1);
 
 	// main LEDs
 	drawLEDs(LEDS_DX, LEDS_DY, LEDS_DX, current, viewZoom, viewPanX, viewPanY);
