@@ -287,7 +287,7 @@ more the bigger N gets.
 Builds an equilateral triangle live, flat side down and point up: row 0
 (the base, N LEDs) is built first, left to right, then each row up has one
 fewer LED, ending with the single apex LED - N(N+1)/2 LEDs total (a
-triangular number). N from 2 to 20. **Zigzag** works the same way as
+triangular number). N from 2 to 24. **Zigzag** works the same way as
 Hex/Matrix's - off by default.
 
 Same triangular-lattice pitch as Hex (`dy = sqrt(0.75) * dx`), but centered

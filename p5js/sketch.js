@@ -105,11 +105,11 @@ let thumbCache = [];
 // blitting a full ImageData buffer, whereas this sketch already redraws every p5 frame and
 // draws circles/lines/text, not pixels - only the gesture *math* carries over, the same
 // reasoning Mandelbrot's own hand-rolled zoom used (see CLAUDE.md's
-// point-cloud-renderer-architecture note). No pinch-zoom: p5's default touch-to-mouse
-// simulation already gives single-finger drag-to-pan and tap-to-toggle for free as long as no
-// touchStarted/touchMoved/touchEnded are defined, but pinch needs real multi-touch handling,
-// which this doesn't add (yet) - wheel zoom (desktop) and double-click/tap reset are the only
-// way to zoom in for now.
+// point-cloud-renderer-architecture note). Touch: p5's touch-to-mouse simulation
+// gives single-finger drag-to-pan and tap-to-toggle for free as long as no touchStarted/
+// touchMoved/touchEnded are defined, so pinch (and double-tap reset, since claiming the touch
+// below suppresses the browser's own dblclick) is layered on with plain touch listeners on
+// the canvas - see wireTouchGestures().
 let viewZoom = 1, viewPanX = 0, viewPanY = 0;
 const clampViewZoom = (z) => Math.max(0.5, Math.min(40, z));
 
@@ -156,6 +156,7 @@ function mainViewProjection() {
 function setup() {
 	const canvas = createCanvas(DIM, THUMB_TOP + THUMB_SIZE); // starts at 1 thumbnail row; grows with the frame count
 	canvas.parent('sketch-holder');
+	wireTouchGestures(canvas.elt);
 	canvas.elt.oncontextmenu = () => false; // right-click toggles a single LED, don't show the browser menu
 	textAlign(CENTER, CENTER);
 
@@ -549,7 +550,7 @@ function mousePressed() {
 }
 
 function mouseDragged() {
-	if (!dragging) return;
+	if (!dragging || pinchLock) return;
 	viewPanX += mouseX - pmouseX;
 	viewPanY += mouseY - pmouseY;
 	dragDistance += Math.abs(mouseX - pmouseX) + Math.abs(mouseY - pmouseY);
@@ -567,8 +568,80 @@ function mouseWheel(event) {
 	return false;
 }
 
+// Two-finger pinch zoom (about the midpoint, which also pans as the fingers travel) and
+// double-tap reset for the main view. Runs on the canvas element itself, ahead of p5's own
+// window-level touch listeners, so touchCount/pinchLock are already current when p5's
+// simulated mousePressed/mouseDragged/mouseReleased fire for the same event. pinchLock stays
+// set until every finger is up, so the finger left over when one lifts doesn't start a pan or
+// toggle an LED. A touch that begins in the main square is claimed (preventDefault) so the
+// page doesn't scroll or zoom under it; touches that begin on the thumbnails still scroll.
+let pinchLock = false;
+let touchCount = 0;
+let pinchStart = null; // { dist, zoom, mx, my } while two fingers are down
+let lastTap = null;    // { t, x, y } of the previous single-finger tap in the main square
+
+function wireTouchGestures(el) {
+	const pos = (t) => {
+		const r = el.getBoundingClientRect();
+		const k = DIM / r.width; // canvas may be CSS-scaled down (max-width:100%)
+		return { x: (t.clientX - r.left) * k, y: (t.clientY - r.top) * k };
+	};
+	const pinchState = (e) => {
+		const a = pos(e.touches[0]), b = pos(e.touches[1]);
+		return { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+	};
+
+	el.addEventListener('touchstart', (e) => {
+		touchCount = e.touches.length;
+		const p = pos(e.touches[0]);
+		if (inMainView(p.x, p.y) && e.cancelable) e.preventDefault();
+		if (touchCount === 2 && inMainView(p.x, p.y)) {
+			pinchLock = true;
+			dragging = false;
+			pinchStart = { ...pinchState(e), zoom: viewZoom };
+		}
+	}, { passive: false });
+
+	el.addEventListener('touchmove', (e) => {
+		if (!pinchStart || e.touches.length < 2) return;
+		if (e.cancelable) e.preventDefault();
+		const cur = pinchState(e);
+		viewPanX += cur.mx - pinchStart.mx;
+		viewPanY += cur.my - pinchStart.my;
+		zoomViewAt(cur.mx, cur.my, pinchStart.zoom * cur.dist / pinchStart.dist);
+		pinchStart.mx = cur.mx;
+		pinchStart.my = cur.my;
+	}, { passive: false });
+
+	const end = (e) => {
+		touchCount = e.touches.length;
+		if (touchCount < 2) pinchStart = null;
+		// double-tap: a still, single-finger tap in the main square within 300ms of the last one
+		if (touchCount === 0 && !pinchLock && dragDistance <= 4 && e.changedTouches.length === 1) {
+			const p = pos(e.changedTouches[0]);
+			if (inMainView(p.x, p.y)) {
+				const now = Date.now();
+				if (lastTap && now - lastTap.t < 300 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 30) {
+					resetView();
+					lastTap = null;
+				} else {
+					lastTap = { t: now, x: p.x, y: p.y };
+				}
+			}
+		}
+	};
+	el.addEventListener('touchend', end);
+	el.addEventListener('touchcancel', end);
+}
+
 function mouseReleased() {
 	if (leds.length === 0) return;
+
+	if (pinchLock) { // the simulated mouse events of a two-finger pinch - not a pan or a toggle
+		dragging = false;
+		if (touchCount === 0) pinchLock = false;
+		return;
+	}
 
 	const startedInMain = dragging; // mousePressed() only sets this for a press inside the main square
 	const wasPan = dragging && dragDistance > 4;

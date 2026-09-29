@@ -74,7 +74,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('triangle-divider');
 		const group = tbGroup('triangle-controls');
-		const nInput = tbNumberInput('triangle-n', { min: 2, max: 20, value: 8 });
+		const nInput = tbNumberInput('triangle-n', { min: 2, max: 24, value: 8 });
 		const { wrapper: zigzagWrapper } = tbCheckbox('triangle-zigzag', 'Zigzag', {
 			checked: false,
 			title: 'Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start'
@@ -92,7 +92,7 @@ registerBuilder({
 	// see sketch.js's parseBuilderParams()/selectBuilder(). Falls back to this builder's own
 	// inputs for whichever of the two is missing (or for both, on a manual Build click).
 	build(params) {
-		const n = Math.min(20, Math.max(2, parseInt(params?.count ?? document.getElementById('triangle-n').value, 10) || 2));
+		const n = Math.min(24, Math.max(2, parseInt(params?.count ?? document.getElementById('triangle-n').value, 10) || 2));
 		const zigzag = params?.zigzag ?? document.getElementById('triangle-zigzag').checked;
 		document.getElementById('triangle-n').value = n;
 		document.getElementById('triangle-zigzag').checked = zigzag;

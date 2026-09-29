@@ -44,7 +44,7 @@
 
 		<span class="tb-break"></span>
 		<div class="tb-group">
-			<label class="tb-checkbox">
+			<label class="tb-checkbox" title="Toggle an LED and its mirror partners together (right-click toggles just one)">
 				<input type="checkbox" id="symmetry-toggle" checked>
 				Symmetry
 			</label>
@@ -52,34 +52,34 @@
 
 		<span class="tb-divider"></span>
 		<div class="tb-group">
-			<button class="tb-btn" data-key="c"><i class="fas fa-copy"></i> Copy</button>
-			<button class="tb-btn" data-key="v"><i class="fas fa-paste"></i> Paste</button>
+			<button class="tb-btn" data-key="c" title="Copy frame (C)"><i class="fas fa-copy"></i> Copy</button>
+			<button class="tb-btn" data-key="v" title="Paste frame (V)"><i class="fas fa-paste"></i> Paste</button>
 		</div>
 
 		<span class="tb-divider"></span>
 		<div class="tb-group">
-			<button class="tb-btn" data-key=" "><i class="fas fa-eraser"></i> Clear</button>
-			<button class="tb-btn" data-key="i"><i class="fas fa-circle-half-stroke"></i> Invert</button>
-			<button class="tb-btn" data-key="r"><i class="fas fa-shuffle"></i> Random</button>
+			<button class="tb-btn" data-key=" " title="Clear frame (Space)"><i class="fas fa-eraser"></i> Clear</button>
+			<button class="tb-btn" data-key="i" title="Invert frame (I)"><i class="fas fa-circle-half-stroke"></i> Invert</button>
+			<button class="tb-btn" data-key="r" title="Randomize frame (R)"><i class="fas fa-shuffle"></i> Random</button>
 		</div>
 
 		<span class="tb-break"></span>
 		<div class="tb-group">
-			<button class="tb-btn" data-key="["><i class="fas fa-clone"></i> Duplicate Before</button>
-			<span id="frame-counter" class="tb-readout">1 / 1</span>
-			<button class="tb-btn" data-key="]"><i class="fas fa-clone"></i> Duplicate After</button>
+			<button class="tb-btn" data-key="[" title="Duplicate current frame before it ([)"><i class="fas fa-clone"></i> Duplicate Before</button>
+			<span id="frame-counter" class="tb-readout" title="Current frame / total frames (, and . step through them)">1 / 1</span>
+			<button class="tb-btn" data-key="]" title="Duplicate current frame after it (])"><i class="fas fa-clone"></i> Duplicate After</button>
 			<span class="tb-divider"></span>
-			<button class="tb-btn" id="delete-btn" data-key="Delete"><i class="fas fa-trash"></i> Delete</button>
+			<button class="tb-btn" id="delete-btn" data-key="Delete" title="Delete current frame (Delete)"><i class="fas fa-trash"></i> Delete</button>
 		</div>
 
 		<span class="tb-break"></span>
 		<div class="tb-group">
-			<label class="tb-checkbox">
+			<label class="tb-checkbox" title="Generate packs 8 LEDs per byte (LED 1 = bit 0) instead of one character per LED">
 				<input type="checkbox" id="compact-toggle">
 				Compact
 			</label>
-			<button class="tb-btn" data-key="g"><i class="fas fa-code"></i> Generate</button>
-			<button class="tb-btn" data-key="e"><i class="fas fa-file-export"></i> Export Layout</button>
+			<button class="tb-btn" data-key="g" title="Generate Arduino code (G)"><i class="fas fa-code"></i> Generate</button>
+			<button class="tb-btn" data-key="e" title="Export layout as JSON (E)"><i class="fas fa-file-export"></i> Export Layout</button>
 		</div>
 	</div>
 
