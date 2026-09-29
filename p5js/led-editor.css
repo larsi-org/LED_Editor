@@ -69,6 +69,12 @@
 	display: none;
 }
 
+.tb-break {
+	flex-basis: 100%;
+	height: 0;
+	margin: -5px 0; /* cancels the extra flex row-gap the empty line adds */
+}
+
 .tb-divider {
 	width: 1px;
 	align-self: stretch;
