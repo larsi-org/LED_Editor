@@ -209,6 +209,11 @@ Builds N rings (plus a center LED) live, in memory, growing outward - ring
 a row-by-row shape, going around each ring in one direction is already a
 sensible order to solder in.
 
+Draws each ring as its own closed loop, not connected to the center or to
+any other ring - unlike Hex/Matrix/Triangle's straight rows, consecutive
+points around a ring are never collinear, so there's no run of edges to
+merge into fewer, longer lines the way `collinearLines()` does for those.
+
 ## Hex (Custom)
 
 Builds a hexagon live: `2N-1` rows, widest in the middle, narrowing N-1

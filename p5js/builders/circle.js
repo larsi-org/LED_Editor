@@ -4,15 +4,26 @@
 // a sensible order to solder in - nothing to snake back and forth across.
 function buildCircle(n) {
 	const circleLeds = [{ x: 0, y: 0 }];
+	// one closed loop per ring, not connected to the center or to each other - unlike Hex/
+	// Matrix/Triangle's straight rows (collinearLines(), builders/common.js), consecutive
+	// points around a ring are never collinear, so there's no run of edges to merge into a
+	// single longer line: every edge stays its own [i, i+1] pair.
+	const circleLines = [];
+	let offset = 1; // circleLeds[0] is the center, each ring starts right after the previous one
 	for (let c = 1; c < n; c++) {
 		const r = c / (n - 1);
 		const fA = 60 / c;
-		for (let a = 0; a < 6 * c; a++) {
+		const ringSize = 6 * c;
+		for (let a = 0; a < ringSize; a++) {
 			const angle = (fA * a * Math.PI) / 180;
 			circleLeds.push({ x: r * Math.cos(angle), y: -r * Math.sin(angle) });
 		}
+		for (let i = 0; i < ringSize; i++) {
+			circleLines.push([offset + i, offset + ((i + 1) % ringSize)]);
+		}
+		offset += ringSize;
 	}
-	applyLayoutData(`circle ${n}`, { leds: circleLeds, r: 0.1, symmetry: computeRadialSymmetry(circleLeds) });
+	applyLayoutData(`circle ${n}`, { leds: circleLeds, r: 0.1, lines: circleLines, symmetry: computeRadialSymmetry(circleLeds) });
 }
 
 registerBuilder({
