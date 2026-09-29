@@ -1,16 +1,17 @@
-// Shared registry + DOM helpers + symmetry math for the live "(Custom)" builders (Circle,
-// Hex, Matrix, Cube - one file each in this directory). Loaded before all of them (see
-// package.json's build script) since each builder's own top-level registerBuilder(...) call
-// needs BUILDERS/registerBuilder to already exist.
+// Shared registry + dropdown/controls wiring + DOM helpers + symmetry math for the live
+// "(Custom)" builders (Circle, Hex, Matrix, Cube - one file each in this directory). Loaded
+// before all of them (see package.json's build script) since each builder's own top-level
+// registerBuilder(...) call needs BUILDERS/registerBuilder to already exist.
 //
 // Interface every builder registers: { id, label, createControls(), build() }.
 //  - id/label: the dropdown <option>'s value/text, same as LAYOUTS' entries.
-//  - createControls(): called once, at page load. Builds this builder's own toolbar
-//    <span class="tb-divider">/<div class="tb-group"> pair (inputs, checkboxes, its Build
-//    button) and wires up that button's click + each input's Enter-key handler itself,
-//    calling this.build() (works via plain method-call `this` binding, since sketch.js
-//    always calls builder.createControls()/builder.build(), never a bare reference to
-//    either). Returns { divider, group } so sketch.js can show/hide and position them.
+//  - createControls(): called once, at page load (by populateBuilderOptions() below). Builds
+//    this builder's own toolbar <span class="tb-divider">/<div class="tb-group"> pair (inputs,
+//    checkboxes, its Build button) and wires up that button's click + each input's Enter-key
+//    handler itself, calling this.build() (works via plain method-call `this` binding, since
+//    this file always calls builder.createControls()/builder.build(), never a bare reference to
+//    either). Returns { divider, group } so populateBuilderOptions()/selectBuilder() below can
+//    show/hide and position them.
 //  - build(): reads this builder's own inputs from the DOM and calls applyLayoutData()
 //    (defined in sketch.js) with the result - same as loadLayout() does for a fetched
 //    layouts/*.json file, just built in memory instead.
@@ -24,6 +25,47 @@ const BUILDERS = [];
 
 function registerBuilder(builder) {
 	BUILDERS.push(builder);
+}
+
+// Adds each registered builder's <option> to the shared #layout <select> (sketch.js's own
+// populateLayoutSelect() adds LAYOUTS' file-based options separately, into the same element)
+// and builds its toolbar controls via createControls() - specifically here, not written into
+// index.html/index.php, so adding a new builder never means touching either page's markup.
+// Each one's <span class="tb-divider">/<div class="tb-group"> pair is inserted right before
+// `anchor` (#builders-anchor - a fixed, empty marker element already in the toolbar, ahead of
+// the always-present Symmetry group), in BUILDERS order - i.e. the order their <script> tags
+// load in, which package.json's build script controls. Stashes { divider, group } on the
+// builder object itself (builder._divider/_group) so selectBuilder() below can show/hide them.
+function populateBuilderOptions(select, anchor) {
+	for (const builder of BUILDERS) {
+		const option = document.createElement('option');
+		option.value = builder.id;
+		option.textContent = builder.label;
+		select.appendChild(option);
+
+		const { divider, group } = builder.createControls();
+		divider.hidden = true;
+		group.hidden = true;
+		anchor.before(divider, group);
+		builder._divider = divider;
+		builder._group = group;
+	}
+}
+
+// Shows builder's own controls and builds it - shared by populateLayoutSelect()'s dropdown
+// change handler (manual selection, no params - build() falls back to reading this builder's
+// own toolbar inputs) and sketch.js's setup() ?builder= URL handling (params supplied, see
+// parseBuilderParams()).
+function selectBuilder(builder, params) {
+	document.getElementById('output').hidden = true;
+	for (const b of BUILDERS) {
+		b._divider.hidden = true;
+		b._group.hidden = true;
+	}
+	document.getElementById('layout').value = builder.id;
+	builder._divider.hidden = false;
+	builder._group.hidden = false;
+	builder.build(params);
 }
 
 function tbDivider(id) {

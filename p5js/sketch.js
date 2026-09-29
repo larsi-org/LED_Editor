@@ -580,13 +580,9 @@ function wireToolbar() {
 	// Enter-key handling itself, inside its own createControls() - see populateLayoutSelect()
 }
 
-// Builder controls (builders/*.js) are created here, not written into index.html/index.php,
-// specifically so adding a new builder never means touching either page's markup - see
-// builders/common.js's own comment on the {id, label, createControls, build} interface this
-// relies on. Each one's <span class="tb-divider">/<div class="tb-group"> pair is inserted
-// right before #builders-anchor (a fixed, empty marker element already in the toolbar, ahead
-// of the always-present Symmetry group), in BUILDERS order - i.e. the order their <script>
-// tags load in, which package.json's build script controls.
+// LAYOUTS' own file-based options, plus BUILDERS' (builders/common.js's populateBuilderOptions()
+// - also where each builder's own toolbar controls get created, so adding a new builder never
+// means touching this file, index.html, or index.php) - one shared #layout dropdown either way.
 function populateLayoutSelect() {
 	const select = document.getElementById('layout');
 	const anchor = document.getElementById('builders-anchor');
@@ -599,40 +595,13 @@ function populateLayoutSelect() {
 		select.appendChild(option);
 	}
 
-	for (const builder of BUILDERS) {
-		const option = document.createElement('option');
-		option.value = builder.id;
-		option.textContent = builder.label;
-		select.appendChild(option);
-
-		const { divider, group } = builder.createControls();
-		divider.hidden = true;
-		group.hidden = true;
-		anchor.before(divider, group);
-		builder._divider = divider;
-		builder._group = group;
-	}
+	populateBuilderOptions(select, anchor);
 
 	select.addEventListener('change', () => {
 		const builder = BUILDERS.find((b) => b.id === select.value);
 		if (builder) selectBuilder(builder); // no params - build() falls back to its own toolbar inputs
 		else loadLayout(select.value);
 	});
-}
-
-// Shows builder's own controls and builds it - shared by the dropdown's change handler above
-// (manual selection, no params - build() falls back to reading this builder's own toolbar
-// inputs) and setup()'s ?builder= URL handling (params supplied, see parseBuilderParams()).
-function selectBuilder(builder, params) {
-	document.getElementById('output').hidden = true;
-	for (const b of BUILDERS) {
-		b._divider.hidden = true;
-		b._group.hidden = true;
-	}
-	document.getElementById('layout').value = builder.id;
-	builder._divider.hidden = false;
-	builder._group.hidden = false;
-	builder.build(params);
 }
 
 document.getElementById('copy-btn').addEventListener('click', () => {
