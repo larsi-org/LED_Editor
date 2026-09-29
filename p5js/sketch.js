@@ -569,12 +569,13 @@ function isTypingTarget() {
 	return tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA';
 }
 
-// Keys executeKey() answers to that are toolbar-button-only: the buttons dispatch through
+// Keys executeKey() answers to that are NOT bare-key shortcuts: the buttons dispatch through
 // executeKey() by their data-key, but destructive or rarely-used actions get no keyboard
-// shortcut (no undo yet, and Space/Backspace are habitual scroll/back keys).
-const BUTTON_ONLY_KEYS = new Set([' ', 'Delete', 'g', 'e']);
+// shortcut at all (Space/Backspace are habitual scroll/back keys), and copy/paste only
+// answer to Ctrl/Cmd+C / V (keyPressed() above), like undo/redo.
+const BUTTON_ONLY_KEYS = new Set([' ', 'Delete', 'g', 'e', 'c', 'v']);
 
-// Ctrl/Cmd+Z undoes, Ctrl+Y or Ctrl/Cmd+Shift+Z redoes - on keydown, while the modifier is
+// Ctrl/Cmd+Z undoes, Ctrl+Y or Ctrl/Cmd+Shift+Z redoes, Ctrl/Cmd+C / V copy / paste the frame - on keydown, while the modifier is
 // certainly still held (keyReleased() fires after it may already be up).
 function keyPressed(event) {
 	// a focused toolbar button (after clicking Undo, say) shouldn't swallow the shortcut - only
@@ -584,7 +585,10 @@ function keyPressed(event) {
 	const k = event.key.toLowerCase();
 	if (k === 'z' && !event.shiftKey) executeKey('undo');
 	else if (k === 'y' || (k === 'z' && event.shiftKey)) executeKey('redo');
-	else return;
+	else if (k === 'c' || k === 'v') { // copy/paste the frame - the browser's own copy/paste is left alone
+		executeKey(k);
+		return;
+	} else return;
 	return false;
 }
 
