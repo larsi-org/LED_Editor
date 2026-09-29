@@ -68,7 +68,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('cube-divider');
 		const group = tbGroup('cube-controls');
-		const nInput = tbNumberInput('cube-n', { min: 2, max: 10, value: 3 });
+		const nInput = tbNumberInput('cube-n', { min: 2, max: 8, value: 3 });
 		const buildBtn = tbButton('cube-build-btn', { icon: 'fa-hammer', text: 'Build' });
 		group.append(tbLabel('cube-n', 'N'), nInput, buildBtn);
 
@@ -82,7 +82,7 @@ registerBuilder({
 	// parseBuilderParams()/selectBuilder(). Falls back to this builder's own N input when a
 	// param is missing (manual Build click passes no params at all) or not present in the URL.
 	build(params) {
-		const n = Math.min(10, Math.max(2, parseInt(params?.count ?? document.getElementById('cube-n').value, 10) || 2));
+		const n = Math.min(8, Math.max(2, parseInt(params?.count ?? document.getElementById('cube-n').value, 10) || 2));
 		document.getElementById('cube-n').value = n;
 		buildCube(n);
 	}

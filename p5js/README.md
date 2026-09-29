@@ -258,7 +258,7 @@ of spelling out `countX=N&countY=1`.
 ## Cube (Custom)
 
 Builds an N×N×N cube live: N levels stacked top to bottom, each level an
-N×N face drawn with a cabinet-projection skew - N from 2 to 10. The
+N×N face drawn with a cabinet-projection skew - N from 2 to 8. The
 original design reverse-engineered this formula from a hand-picked N=3
 layout (`0.2`/`0.8` skew/spacing, since deleted along with every other
 checked-in `layouts/*.json` file - see the "Adding a new builder"/Layout
