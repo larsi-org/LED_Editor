@@ -388,7 +388,7 @@ function executeKey(key) {
 	if (leds.length === 0) return;
 
 	switch (key) {
-		case ' ': // clear current frame
+		case ' ': // clear current frame (toolbar button only)
 			states[current] = states[current].map(() => false);
 			invalidateCurrentThumb();
 			break;
@@ -409,8 +409,7 @@ function executeKey(key) {
 			current++;
 			insertFrame(current, states[current - 1].slice());
 			break;
-		case 'Delete':
-		case 'Backspace': // delete current frame
+		case 'Delete': // delete current frame (toolbar button only)
 			if (states.length > 1) { // keep at least one frame
 				deleteFrame(current);
 				if (current > states.length - 1) current = states.length - 1;
@@ -522,15 +521,13 @@ function isTypingTarget() {
 	return tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA';
 }
 
-function keyPressed() {
-	if (isTypingTarget()) return;
-	// the browser's default action (space/arrow scroll, Delete/Backspace nav) fires on
-	// keydown, so it has to be blocked here - blocking it in keyReleased is too late
-	if (key === ' ' || key === 'Delete' || key === 'Backspace') return false;
-}
+// Keys executeKey() answers to that are toolbar-button-only: the buttons dispatch through
+// executeKey() by their data-key, but destructive or rarely-used actions get no keyboard
+// shortcut (no undo yet, and Space/Backspace are habitual scroll/back keys).
+const BUTTON_ONLY_KEYS = new Set([' ', 'Delete', 'g', 'e']);
 
 function keyReleased() {
-	if (isTypingTarget()) return;
+	if (isTypingTarget() || BUTTON_ONLY_KEYS.has(key)) return;
 	executeKey(key);
 	return false;
 }

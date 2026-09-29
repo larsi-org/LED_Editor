@@ -303,7 +303,7 @@ single N, not in general).
 ## Symmetry, for the six builders
 
 None of the six save anything to a file on their own - use **Export
-Layout** (`e`) to grab one yourself. Circle/Hex/Matrix/Strip/Triangle all
+Layout** to grab one yourself. Circle/Hex/Matrix/Strip/Triangle all
 compute `symmetry` (see "Layout file format" below) from the shape's actual
 geometry, not its row/column/ring index, so it's already correct under
 Hex/Matrix/Triangle's Zigzag without needing to special-case it - the same
@@ -410,19 +410,24 @@ always clear which one the main view is showing.
 
 - `,` / `.` - previous / next frame
 - `[` / `]` - duplicate the current frame before / after itself (the copy becomes current; the clipboard is untouched)
-- Delete - remove the current frame
 - `c` / `v` - copy / paste the current frame
-- Space - clear the current frame
 - `i` - invert the current frame
 - `r` - flip a random LED (and its symmetric partner, if any)
-- `g` - open a text box with Arduino code for the whole animation: one
+
+**Clear**, **Delete**, **Generate** and **Export Layout** are toolbar buttons only, with no
+keyboard shortcut: the first two are destructive (there is no undo yet), and Space/Backspace
+are habitual scroll/back keys.
+
+The two output actions:
+
+- **Generate** - open a text box with Arduino code for the whole animation: one
   `PROGMEM` string per frame (one `0`/`1` per LED), a `PROGMEM` table of
   pointers to them (`frames[]`), `NUM_LEDS`/`NUM_FRAMES`, and an `ledOn(frame, led)`
   helper - plus a "Copy to clipboard" button. With **Compact** checked, each
   frame is instead a `uint8_t` array, 8 LEDs per byte: LED 1 is the lowest bit
   of the first byte, LED 8 the highest, LED 9 the lowest bit of the second
   byte, and so on, with the last byte zero-padded
-- `e` - open the same text box with the current layout's own `layouts/*.json`
+- **Export Layout** - open the same text box with the current layout's own `layouts/*.json`
   contents instead - the only way to keep a layout built with **Circle**,
   **Hex**, or **Matrix (Custom)**, since those are never written to a file
   on their own
