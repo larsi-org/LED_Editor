@@ -33,7 +33,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('circle-divider');
 		const group = tbGroup('circle-controls');
-		const nInput = tbNumberInput('circle-n', { min: 3, max: 20, value: 10 });
+		const nInput = tbNumberInput('circle-n', { min: 3, max: 20, value: 8 });
 		const buildBtn = tbButton('circle-build-btn', { icon: 'fa-hammer', text: 'Build' });
 		group.append(tbLabel('circle-n', 'N'), nInput, buildBtn);
 

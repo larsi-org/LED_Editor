@@ -48,7 +48,7 @@ registerBuilder({
 	createControls() {
 		const divider = tbDivider('hex-divider');
 		const group = tbGroup('hex-controls');
-		const nInput = tbNumberInput('hex-n', { min: 3, max: 20, value: 10 });
+		const nInput = tbNumberInput('hex-n', { min: 3, max: 20, value: 8 });
 		const { wrapper: zigzagWrapper } = tbCheckbox('hex-zigzag', 'Zigzag', {
 			checked: true,
 			title: 'Snake wiring: every other row is mirrored, so the strip continues straight into the next row instead of jumping back to the start'
