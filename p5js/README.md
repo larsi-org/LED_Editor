@@ -106,6 +106,10 @@ layout file, which still needs a row in the Projects table and its own
   one file per live "(Custom)" builder in the Layout dropdown, each owning
   its own geometry *and* its own toolbar controls (see "Adding a new
   builder" below)
+- `play-pause-loop.js` - byte-for-byte copy of larsi.org's `lib/larsi.org/play-pause-loop.js`
+  (the Play/Pause helper graphics/flower and Function3D use too); `index.html` loads it
+  before the editor, and the **Play** button plus **fps** field drive it (playback steps
+  through the frames in order at 1-30 fps; any click in the editor or toolbar action stops it)
 - `dist/led-editor.min.js` - built from all of those (see "Building" below);
   `index.html` loads this, not the source files directly
 - `layouts/<name>.json` - one file per checked-in hand-edited layout the

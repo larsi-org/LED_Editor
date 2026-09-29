@@ -196,6 +196,7 @@ function applyLayoutData(name, data) {
 	symmetry = data.symmetry || leds.map((_, i) => i); // no symmetry key means no partners
 	ledLines = data.lines || [];
 	clipboard = leds.map(() => false);
+	stopPlayback();
 	states = [leds.map(() => false)];
 	thumbCache = []; // brand-new leds - every previous frame's cached image is for a completely different shape now
 	current = 0;
@@ -384,6 +385,7 @@ function toggleLED(i) {
 
 function executeKey(key) {
 	if (leds.length === 0) return;
+	stopPlayback();
 
 	switch (key) {
 		case ' ': // clear current frame (toolbar button only)
@@ -539,6 +541,8 @@ let dragging = false;
 let dragDistance = 0;
 
 function mousePressed() {
+	// a press anywhere on the canvas (editor or thumbnails) - not the toolbar's own Play button
+	if (mouseX >= 0 && mouseX < width && mouseY >= 0 && mouseY < height) stopPlayback();
 	if (mainTouch) return; // touches that begin in the main square are handled by wireTouchGestures()
 	if (leds.length === 0 || !inMainView(mouseX, mouseY)) return;
 	dragging = true;
@@ -597,6 +601,7 @@ function wireTouchGestures(el) {
 			const p = pos(e.touches[0]);
 			if (!inMainView(p.x, p.y)) return; // thumbnails etc: leave to the browser and p5
 			mainTouch = true;
+			stopPlayback();
 			touchMulti = false;
 			touchMoved = 0;
 			touchPan = p;
@@ -715,7 +720,21 @@ function updateCanvasHeight() {
 	resizeCanvas(DIM, THUMB_TOP + rows * THUMB_SIZE);
 }
 
+// Playback preview: steps `current` through every frame in order, looping, at the fps field's
+// rate - createPlayPauseLoop() is the same shared helper graphics/flower and Function3D use
+// (play-pause-loop.js, loaded before this file). Any click in the canvas or toolbar action
+// stops it, so an edit never lands on a frame that's already flown past.
+let playLoop = null;
+const stopPlayback = () => { if (playLoop) playLoop.stop(); };
+
 function wireToolbar() {
+	const fpsInput = document.getElementById('fps-input');
+	playLoop = createPlayPauseLoop(
+		document.getElementById('play-btn'),
+		() => { current = (current + 1) % states.length; },
+		() => Math.min(30, Math.max(1, parseFloat(fpsInput.value) || 4))
+	);
+	window.addEventListener('pagehide', playLoop.stop);
 	document.querySelectorAll('#toolbar .tb-btn[data-key]').forEach((btn) => {
 		btn.addEventListener('click', () => executeKey(btn.dataset.key));
 	});
