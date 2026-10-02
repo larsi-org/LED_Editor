@@ -17,3 +17,10 @@ cube, an LED shield, and an addressable-LED snowflake. Each project's write-up
   exporting them as bitmaps; see its own README
 - `Eagle/` - schematic and board files for the LED_6x5 and LED_Cube3 shields
 - `Arduino/` - firmware for the shields (see caveat in its own README)
+
+## License
+
+MIT - see [LICENSE](LICENSE). It covers the original code and documents in this
+repository, chiefly the `p5js/` editor. The Eagle schematic and board files
+embed parts from third-party libraries (for example SparkFun's), which stay
+under their own terms.
