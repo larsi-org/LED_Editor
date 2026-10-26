@@ -982,9 +982,9 @@ function showLoadedLayout(layout) {
 }
 
 // Playback preview: steps `current` through every frame in order, looping, at the fps field's
-// rate - createPlayPauseLoop() is the same shared helper graphics/flower and Function3D use
-// (play-pause-loop.js, loaded before this file). Any click in the canvas or toolbar action
-// stops it, so an edit never lands on a frame that's already flown past.
+// rate - createPlayPauseLoop() comes from play-pause-loop.js, built in ahead of this file.
+// Any click in the canvas or toolbar action stops it, so an edit never lands on a frame
+// that's already flown past.
 let playLoop = null;
 const stopPlayback = () => { if (playLoop) playLoop.stop(); };
 
